@@ -6,6 +6,31 @@ const mainConfig = [
     iconName: "FiHome",
   },
   {
+    id: "enterpriseStructureMenu",
+    label: "Enterprise Structure",
+    iconName: "FaBuilding",
+    subMenu: [
+      {
+        id: "usersMenu",
+        label: "Users",
+        path: "/admin/users",
+        iconName: "FiUsers",
+      },
+      {
+        id: "companyMenu",
+        label: "Company",
+        path: "/admin/company",
+        iconName: "FaBuilding",
+      },
+      {
+        id: "assignUserstoCompanyMenu",
+        label: "Assign Users to Company",
+        path: "/admin/assign-users-to-company",
+        iconName: "FiUsers",
+      },
+    ],
+  },
+  {
     id: "procureToPayMenu",
     label: "Procure To Pay (PTP)",
     iconName: "FaMoneyBill",

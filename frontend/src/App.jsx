@@ -1,11 +1,13 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./utils/ProtectedRoute";
-import MaterialGroups from "./pages/materials/MaterialGroups";
-import MaterialTypes from "./pages/materials/MaterialTypes";
-import MaterialCategories from "./pages/materials/MaterialCategories";
-import VenderTypes from "./pages/vendors/VenderTypes";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import Users from "./pages/admin/enterprisestructure/Users";
+import VenderTypes from "./pages/admin/vendors/VenderTypes";
+import MaterialGroups from "./pages/admin/materials/MaterialGroups";
+import MaterialCategories from "./pages/admin/materials/MaterialCategories";
+import MaterialTypes from "./pages/admin/materials/MaterialTypes";
+import MaterialMaster from "./pages/admin/materials/MaterialMaster";
 
 function App() {
   return (
@@ -14,6 +16,9 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin/home" element={<AdminDashboard />} />
+
+        {/* Enterprise Structure */}
+        <Route path="/admin/users" element={<Users />} />
 
         {/* Vendors */}
         <Route path="/admin/vender-types" element={<VenderTypes />} />
@@ -25,6 +30,7 @@ function App() {
           element={<MaterialCategories />}
         />
         <Route path="/admin/material-types" element={<MaterialTypes />} />
+        <Route path="/admin/materials" element={<MaterialMaster />} />
       </Route>
     </Routes>
   );

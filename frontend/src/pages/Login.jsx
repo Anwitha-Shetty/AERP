@@ -183,7 +183,7 @@ const Login = () => {
             disabled={loading}
             className="px-3 py-1.5 bg-amber-400 rounded-full h-8 text-black transition"
           >
-            {loading ? "Logging..." : "Login"}
+            {loading ? "Login" : "Login"}
           </button>
         </div>
       </form>

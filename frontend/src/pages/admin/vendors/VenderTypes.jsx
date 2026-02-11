@@ -1,7 +1,6 @@
-import AdminSidebar from "../../components/AdminSidebar";
+import AdminSidebar from "../../../components/AdminSidebar";
 
-
-const MaterialGroups = () => {
+const VenderTypes = () => {
   return (
     <div className="flex h-screen">
       <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
@@ -13,4 +12,4 @@ const MaterialGroups = () => {
   );
 };
 
-export default MaterialGroups;
+export default VenderTypes;

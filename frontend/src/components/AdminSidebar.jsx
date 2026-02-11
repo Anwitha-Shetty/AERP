@@ -9,6 +9,7 @@ import {
   FaBriefcase,
   FaClipboardList,
   FaFileSignature,
+  FaBuilding,
 } from "react-icons/fa";
 import mainConfig from "../config/mainConfig";
 import React from "react";
@@ -29,6 +30,8 @@ const getIcon = (iconName) => {
   switch (iconName) {
     case "FaMoneyBill":
       return <FaMoneyBill className="w-5 h-5" />;
+    case "FaBuilding":
+      return <FaBuilding className="w-5 h-5" />;
     case "FaFileSignature":
       return <FaFileSignature className="w-5 h-5" />;
     case "FaBriefcase":
@@ -156,13 +159,13 @@ const AdminSidebar = () => {
 
           {/* ✅ SHOW ICON ONLY WHEN OPEN */}
           {isOpen && (
-            <FiIcons.FiChevronRight className="text-gray-300 rotate-90 transition-all duration-300" />
+            <FiIcons.FiChevronRight className="rotate-90 transition-transform duration-300 text-gray-300" />
           )}
         </button>
 
         <ul
-          className={`ml-6 space-y-[1px] transition-all duration-300 overflow-hidden ${
-            isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+          className={`ml-8 space-y-[1px] text-sm transition-all duration-300 ease-in-out overflow-hidden transform origin-top ${
+            isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
           }`}
         >
           {menu.subMenu.map((sub) => renderMenu(sub, level + 1))}
@@ -178,7 +181,7 @@ const AdminSidebar = () => {
       if (route) {
         navigate(route);
       } else {
-        console.warn("Invalid code");
+        console.warn("Invalid T code");
       }
 
       dispatch(clearSearchCode());
@@ -210,8 +213,8 @@ const AdminSidebar = () => {
             <input
               type="text"
               maxLength={3}
-              placeholder="Enter code"
-              className="flex-1 px-2 outline-none rounded-l w-24"
+              placeholder="Enter T code"
+              className="flex-1 px-2 outline-none rounded-l w-28"
               value={searchCode}
               onChange={(e) =>
                 dispatch(setSearchCode(e.target.value.toUpperCase()))
