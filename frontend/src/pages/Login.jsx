@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.jpg";
-import { loginUser } from "../store/authSlice";
+import logo from "../assets/logo.png";
+import { loginUser, clearError } from "../store/authSlice";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FiInfo } from "react-icons/fi";
 
@@ -25,9 +25,13 @@ const Login = () => {
 
   const showTemporaryMessage = (text, type = "success") => {
     setMessage({ text, type });
-    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+    setTimeout(() => {
+      setMessage({ text: "", type: "" });
+      dispatch(clearError());
+    }, 3000);
   };
 
+  // ✅ Success handler
   useEffect(() => {
     if (user?.access && user?.position) {
       showTemporaryMessage("Login successfully!", "success");
@@ -53,12 +57,19 @@ const Login = () => {
     }
   }, [user, navigate]);
 
+  // ✅ Error handler
+  useEffect(() => {
+    if (error) {
+      showTemporaryMessage(error, "error");
+    }
+  }, [error]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.username || !formData.password) {
@@ -66,7 +77,7 @@ const Login = () => {
       return;
     }
 
-    dispatch(
+    await dispatch(
       loginUser({
         username: formData.username,
         password: formData.password,
@@ -166,17 +177,13 @@ const Login = () => {
           </a>
         </div>
 
-        {error && (
-          <p className="text-red-600 text-sm text-center mt-2">{error}</p>
-        )}
-
         <div className="flex justify-center mt-5">
           <button
             type="submit"
             disabled={loading}
             className="px-3 py-1.5 bg-amber-400 rounded-full h-8 text-black transition"
           >
-            Login
+            {loading ? "Logging..." : "Login"}
           </button>
         </div>
       </form>

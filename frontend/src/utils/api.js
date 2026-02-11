@@ -7,6 +7,10 @@ const api = axios.create({
   baseURL: apiBaseUrl,
 });
 
+/* -----------------------------
+   REQUEST INTERCEPTOR
+--------------------------------*/
+
 api.interceptors.request.use(
   (config) => {
     const token = Cookies.get("access_token");
@@ -14,25 +18,44 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (err) => Promise.reject(err),
 );
 
+/* -----------------------------
+   RESPONSE INTERCEPTOR (FIXED)
+--------------------------------*/
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (
-      err.response &&
-      (err.response.status === 401 || err.response.status === 403)
-    ) {
-      console.log("Session expired. Please log in again.");
-      Cookies.remove("access_token");
-      Cookies.remove("refresh_token");
-      Cookies.remove("username");
-      Cookies.remove("position");
-      window.location.href = "/";
+    if (err.response) {
+      const status = err.response.status;
+
+      // ❌ Do NOT redirect during login
+      if (status === 401 && !err.config.url.includes("/")) {
+        console.log("Unauthorized request");
+
+        const refreshToken = Cookies.get("refresh_token");
+
+        // Only logout if both tokens missing
+        if (!refreshToken) {
+          Cookies.remove("access_token");
+          Cookies.remove("refresh_token");
+          Cookies.remove("username");
+          Cookies.remove("position");
+          window.location.href = "/";
+        }
+      }
+
+      // ❌ Do NOT force logout on 403
+      if (status === 403) {
+        console.warn("Permission denied:", err.response.data);
+      }
     }
+
     return Promise.reject(err);
   },
 );

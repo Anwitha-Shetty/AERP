@@ -1,6 +1,7 @@
-import AdminSidebar from "../components/AdminSidebar";
+import AdminSidebar from "../../components/AdminSidebar";
 
-const MaterialCategories = () => {
+
+const MaterialMaster = () => {
   return (
     <div className="flex h-screen">
       <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
@@ -12,4 +13,4 @@ const MaterialCategories = () => {
   );
 };
 
-export default MaterialCategories;
+export default MaterialMaster;

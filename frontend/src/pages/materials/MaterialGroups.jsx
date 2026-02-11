@@ -1,4 +1,5 @@
-import AdminSidebar from "../components/AdminSidebar";
+import AdminSidebar from "../../components/AdminSidebar";
+
 
 const MaterialGroups = () => {
   return (

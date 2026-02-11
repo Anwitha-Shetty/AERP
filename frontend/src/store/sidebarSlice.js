@@ -1,24 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
-import mainConfig from "../config/mainConfig";
-
-const flattenConfig = (config) => {
-  let map = {};
-  config.forEach((menu) => {
-    if (menu.code) map[menu.code] = menu.path;
-    if (menu.subMenu)
-      menu.subMenu.forEach((sub) => {
-        if (sub.code) map[sub.code] = sub.path;
-      });
-  });
-  return map;
-};
-
-const codeMap = flattenConfig(mainConfig);
 
 const initialState = {
   openMenus: {},
   searchCode: "",
-  codeMap,
+  codeMap: {},
 };
 
 const sidebarSlice = createSlice({
@@ -38,10 +23,18 @@ const sidebarSlice = createSlice({
     setOpenMenus: (state, action) => {
       state.openMenus = action.payload;
     },
+    setCodeMap: (state, action) => {
+      state.codeMap = action.payload;
+    },
   },
 });
 
-export const { toggleMenu, setSearchCode, clearSearchCode, setOpenMenus } =
-  sidebarSlice.actions;
+export const {
+  toggleMenu,
+  setSearchCode,
+  clearSearchCode,
+  setOpenMenus,
+  setCodeMap,
+} = sidebarSlice.actions;
 
 export default sidebarSlice.reducer;

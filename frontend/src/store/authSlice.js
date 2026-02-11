@@ -12,15 +12,16 @@ export const loginUser = createAsyncThunk(
         server,
       };
 
-      // console.log("LOGIN REQUEST BODY:", requestBody);
-      // console.log("API BASE URL (RUNTIME):", import.meta.env.VITE_API_BASE_URL);
-
       const response = await api.post("/access/login/", requestBody);
 
-      // console.log("LOGIN RESPONSE:", response.data);
+      // ✅ Check status code
+      if (response.status !== 200 && response.status !== 201) {
+        return rejectWithValue("Login failed. Please try again.");
+      }
 
       const { access, refresh, username: uname, position } = response.data;
 
+      // ✅ Save tokens
       Cookies.set("access_token", access, { expires: 1 });
       Cookies.set("refresh_token", refresh, { expires: 1 });
       Cookies.set("username", uname, { expires: 1 });
@@ -33,14 +34,10 @@ export const loginUser = createAsyncThunk(
         position,
       };
     } catch (error) {
-      console.error(
-        "LOGIN ERROR RESPONSE:",
-        error.response?.data || error.message,
-      );
-
       return rejectWithValue(
         error.response?.data?.message ||
           error.response?.data?.detail ||
+          error.response?.data?.non_field_errors?.[0] ||
           "Invalid username, password or server",
       );
     }
@@ -67,6 +64,9 @@ const authSlice = createSlice({
       Cookies.remove("username");
       Cookies.remove("position");
     },
+    clearError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -85,5 +85,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

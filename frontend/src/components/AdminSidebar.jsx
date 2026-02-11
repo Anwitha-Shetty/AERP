@@ -1,9 +1,15 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import logo from "../assets/logo.jpg";
+import logo from "../assets/logo.png";
 import * as FiIcons from "react-icons/fi";
-import { FaMoneyBill, FaBriefcase, FaClipboardList } from "react-icons/fa";
+import api from "../utils/api";
+import {
+  FaMoneyBill,
+  FaBriefcase,
+  FaClipboardList,
+  FaFileSignature,
+} from "react-icons/fa";
 import mainConfig from "../config/mainConfig";
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,6 +18,7 @@ import {
   setSearchCode,
   clearSearchCode,
   setOpenMenus,
+  setCodeMap,
 } from "../store/sidebarSlice";
 
 const getIcon = (iconName) => {
@@ -22,6 +29,8 @@ const getIcon = (iconName) => {
   switch (iconName) {
     case "FaMoneyBill":
       return <FaMoneyBill className="w-5 h-5" />;
+    case "FaFileSignature":
+      return <FaFileSignature className="w-5 h-5" />;
     case "FaBriefcase":
       return <FaBriefcase className="w-5 h-5" />;
     case "FaClipboardList":
@@ -36,62 +45,83 @@ const AdminSidebar = () => {
   const location = useLocation();
   const dropdownRef = useRef(null);
 
-  const isProfilePage = location.pathname.startsWith(
-    "/admin/employees/profile",
-  );
+  // const isProfilePage = location.pathname.startsWith(
+  //   "/admin/employees/profile",
+  // );
 
   const dispatch = useDispatch();
-  const { openMenus, searchCode, codeMap } = useSelector(
-    (state) => state.sidebar,
-  );
+
+  const { openMenus, searchCode } = useSelector((state) => state.sidebar);
 
   const username = Cookies.get("username") || "User";
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [showLogoutPopup, setShowLogoutPopup] = React.useState(false);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
-        setShowDropdown(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  /* ------------------------------
+     RECURSIVE OPEN MENU HANDLER
+  --------------------------------*/
 
   useEffect(() => {
-    const newOpenMenus = {};
     const activePath = location.pathname;
+    const newOpenMenus = {};
 
-    const findActive = (menus) => {
+    const findAndOpenParents = (menus, parents = []) => {
       menus.forEach((menu) => {
+        if (menu.path === activePath) {
+          parents.forEach((p) => (newOpenMenus[p] = true));
+        }
+
         if (menu.subMenu) {
-          menu.subMenu.forEach((sub) => {
-            if (sub.path === activePath) newOpenMenus[menu.id] = true;
-          });
+          findAndOpenParents(menu.subMenu, [...parents, menu.id]);
         }
       });
     };
 
-    findActive(mainConfig);
+    findAndOpenParents(mainConfig);
     dispatch(setOpenMenus(newOpenMenus));
   }, [location.pathname, dispatch]);
 
-  const getEffectivePath = () =>
-    location.pathname.startsWith("/admin/employees/profile")
-      ? "/admin/employees"
-      : location.pathname;
+  const { codeMap } = useSelector((state) => state.sidebar);
+
+  useEffect(() => {
+    const token = Cookies.get("access_token");
+    if (!token) return;
+
+    const fetchNavigation = async () => {
+      try {
+        const res = await api.get("/access/navigation_box/");
+        const data = res.data;
+
+        const dynamicMap = {};
+
+        data.forEach((item) => {
+          if (item.code && item.path) {
+            dynamicMap[item.code] = item.path;
+          }
+        });
+
+        dispatch(setCodeMap(dynamicMap));
+      } catch (error) {
+        console.error("Navigation API error:", error);
+      }
+    };
+
+    fetchNavigation();
+  }, [dispatch]);
 
   const getMenuClass = (path) => {
-    const activePath = getEffectivePath();
     return `flex items-center justify-between w-full px-2 py-1 rounded-md cursor-pointer transition ${
-      activePath === path ? "bg-amber-100 text-gray-800" : "text-gray-800"
+      location.pathname === path
+        ? "bg-amber-100 text-gray-800"
+        : "text-gray-800"
     }`;
   };
 
   const getLinkClass = (path) => {
-    const activePath = getEffectivePath();
     return `flex items-center gap-3 px-2 py-1 rounded-md cursor-pointer transition ${
-      activePath === path ? "bg-amber-100 text-gray-700" : "text-gray-700"
+      location.pathname === path
+        ? "bg-amber-100 text-gray-700"
+        : "text-gray-700"
     }`;
   };
 
@@ -99,62 +129,60 @@ const AdminSidebar = () => {
     dispatch(toggleMenu(id));
   };
 
-  const renderMenu = (menu) => {
+  const renderMenu = (menu, level = 0) => {
     const isOpen = openMenus[menu.id];
 
     if (!menu.subMenu) {
       return (
-        <div key={menu.id}>
+        <li key={menu.id}>
           <Link to={menu.path} className={getLinkClass(menu.path)}>
-            <div className="flex items-center gap-3">
-              {getIcon(menu.iconName)}
-              <span>{menu.label}</span>
-            </div>
+            {getIcon(menu.iconName)}
+            <span>{menu.label}</span>
           </Link>
-        </div>
+        </li>
       );
     }
 
     return (
-      <div key={menu.id}>
+      <li key={menu.id}>
         <button
           className={getMenuClass(menu.path)}
           onClick={() => handleToggleMenu(menu.id)}
         >
           <div className="flex items-center gap-3">
             {getIcon(menu.iconName)}
-            <span>
-              {menu.label} <span className="text-xs">{menu.span}</span>
-            </span>
+            <span>{menu.label}</span>
           </div>
 
-          <FiIcons.FiChevronRight
-            className={`transition-transform duration-300 text-gray-300 ${
-              isOpen ? "rotate-90" : "rotate-0"
-            }`}
-          />
+          {/* ✅ SHOW ICON ONLY WHEN OPEN */}
+          {isOpen && (
+            <FiIcons.FiChevronRight className="text-gray-300 rotate-90 transition-all duration-300" />
+          )}
         </button>
 
         <ul
-          className={`ml-8 space-y-[1px] text-sm transition-all duration-300 ease-in-out overflow-hidden transform origin-top ${
-            isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          className={`ml-6 space-y-[1px] transition-all duration-300 overflow-hidden ${
+            isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          {menu.subMenu.map((sub) =>
-            sub.subMenu ? (
-              renderMenu(sub)
-            ) : (
-              <li key={sub.path}>
-                <Link to={sub.path} className={getLinkClass(sub.path)}>
-                  {getIcon(sub.iconName)}
-                  <span>{sub.label}</span>
-                </Link>
-              </li>
-            ),
-          )}
+          {menu.subMenu.map((sub) => renderMenu(sub, level + 1))}
         </ul>
-      </div>
+      </li>
     );
+  };
+
+  const handleSearch = () => {
+    if (searchCode.length === 3) {
+      const route = codeMap[searchCode];
+
+      if (route) {
+        navigate(route);
+      } else {
+        console.warn("Invalid code");
+      }
+
+      dispatch(clearSearchCode());
+    }
   };
 
   const handleLogoClick = () => {
@@ -172,14 +200,6 @@ const AdminSidebar = () => {
     Cookies.remove("username");
     Cookies.remove("position");
     window.location.href = "/";
-  };
-
-  const handleSearch = () => {
-    if (searchCode.length === 3) {
-      const route = codeMap[searchCode];
-      if (route) navigate(route);
-      dispatch(clearSearchCode());
-    }
   };
 
   return (
@@ -225,7 +245,7 @@ const AdminSidebar = () => {
                   Hello! {username}
                 </div>
 
-                {!isProfilePage && (
+                {/* {!isProfilePage && (
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm font-semibold border-b border-gray-300 cursor-pointer"
                     onClick={() =>
@@ -234,7 +254,7 @@ const AdminSidebar = () => {
                   >
                     <FiIcons.FiUser className="mr-2" /> Profile
                   </button>
-                )}
+                )} */}
 
                 <button
                   className="flex items-center w-full px-4 py-2 text-sm font-semibold border-b border-gray-300 cursor-pointer"
