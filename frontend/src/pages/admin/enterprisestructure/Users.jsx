@@ -3,6 +3,7 @@ import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import { useEffect, useState } from "react";
+import { FiUsers } from "react-icons/fi";
 
 const Users = () => {
   const [breadcrumbs, setBreadcrumbs] = useState([]);
@@ -186,6 +187,28 @@ const Users = () => {
               <MdKeyboardArrowRight />
             </button>
           </div>
+        </div>
+
+        <div className="w-full h-[87%] border border-gray-300 mb-4 rounded">
+          <div className="w-full h-[13%] flex justify-between items-end border-b border-gray-300 p-2 mb-4">
+            <div className="flex items-center gap-2">
+              <FiUsers className="text-amber-400 text-lg" />
+              <h2 className="text-lg font-semibold text-gray-700">Users</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-1.5 h-8 bg-amber-400 text-black rounded text-sm cursor-pointer flex items-center gap-1 transition">
+                POST
+              </button>
+              <button className="px-3 py-1.5 h-8 bg-amber-400 text-black rounded text-sm cursor-pointer flex items-center gap-1 transition">
+                PARK
+              </button>
+              <button className="px-3 py-1.5 h-8 bg-amber-400 text-black rounded text-sm cursor-pointer flex items-center gap-1 transition">
+                VIEW ALL
+              </button>
+            </div>
+          </div>
+          <div className="w-full h-[22%] border-b border-gray-300"></div>
+          <div className="w-full h-[60.5%] rounded"></div>
         </div>
       </main>
     </div>
