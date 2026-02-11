@@ -207,8 +207,21 @@ const Users = () => {
               </button>
             </div>
           </div>
-          <div className="w-full h-[22%] border-b border-gray-300"></div>
-          <div className="w-full h-[60.5%] rounded"></div>
+          <div className="w-full h-[22%] border-b border-gray-300 p-2"></div>
+          <div className="w-full max-h-[60.5%] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none p-2">
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+            <h1>Hi</h1>
+          </div>
         </div>
       </main>
     </div>
