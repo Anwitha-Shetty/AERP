@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
-import { loginUser, clearError } from "../store/authSlice";
+import { loginUser, clearError } from "../store/slices/authSlice";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FiInfo } from "react-icons/fi";
 
@@ -44,11 +44,17 @@ const Login = () => {
           case "MANAGER":
             navigate("/manager/home");
             break;
-          case "HR":
-            navigate("/hr/home");
+          case "GENERALMANAGER":
+            navigate("/general-manager/home");
             break;
-          case "EMPLOYEE":
-            navigate("/employee/home");
+          case "VENDOR":
+            navigate("/vendor/home");
+            break;
+          case "ASSOCIATE":
+            navigate("/associate/home");
+            break;
+          case "EXECUTIVES":
+            navigate("/executives/home");
             break;
           default:
             navigate("/");

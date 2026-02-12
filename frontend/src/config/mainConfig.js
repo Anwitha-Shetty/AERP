@@ -13,8 +13,21 @@ const mainConfig = [
       {
         id: "usersMenu",
         label: "Users",
-        path: "/admin/users",
         iconName: "FiUsers",
+        subMenu: [
+          {
+            id: "createUserMenu",
+            label: "Create User",
+            path: "/admin/users/create",
+            iconName: "FiUsers",
+          },
+          {
+            id: "viewUserMenu",
+            label: "View Users",
+            path: "/admin/users/view",
+            iconName: "FiUsers",
+          },
+        ],
       },
       {
         id: "companyMenu",

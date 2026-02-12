@@ -20,7 +20,7 @@ import {
   clearSearchCode,
   setOpenMenus,
   setCodeMap,
-} from "../store/sidebarSlice";
+} from "../store/slices/sidebarSlice";
 
 const getIcon = (iconName) => {
   if (!iconName) return null;
@@ -192,8 +192,11 @@ const AdminSidebar = () => {
     const position = Cookies.get("position");
     let path = "/";
     if (position === "ADMIN") path = "/admin/home";
-    else if (position === "GM") path = "/manager/home";
-    else if (position === "EXE") path = "/home";
+    else if (position === "MANAGER") path = "/manager/home";
+    else if (position === "GENERALMANAGER") path = "/general-manager/home";
+    else if (position === "VENDOR") path = "/vendor/home";
+    else if (position === "ASSOCIATE") path = "/associate/home";
+    else if (position === "EXECUTIVES") path = "/executives/home";
     navigate(path);
   };
 
