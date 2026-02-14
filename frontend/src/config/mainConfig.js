@@ -22,7 +22,7 @@ const mainConfig = [
             iconName: "FiUsers",
           },
           {
-            id: "viewUserMenu",
+            id: "viewUsersMenu",
             label: "View Users",
             path: "/admin/users/view",
             iconName: "FiUsers",
@@ -32,8 +32,21 @@ const mainConfig = [
       {
         id: "companyMenu",
         label: "Company",
-        path: "/admin/company",
         iconName: "FaBuilding",
+        subMenu: [
+          {
+            id: "createCompanyMenu",
+            label: "Create Company",
+            path: "/admin/company/create",
+            iconName: "FaBuilding",
+          },
+          {
+            id: "viewCompaniesMenu",
+            label: "View Companies",
+            path: "/admin/company/view",
+            iconName: "FaBuilding",
+          },
+        ],
       },
       {
         id: "assignUserstoCompanyMenu",

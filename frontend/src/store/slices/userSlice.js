@@ -16,14 +16,55 @@ export const fetchUsers = createAsyncThunk(
 
 export const createUser = createAsyncThunk(
   "users/createUser",
-  async (formData, { rejectWithValue }) => {
+  async (formData, { dispatch, rejectWithValue }) => {
     try {
       const res = await api.post("/people/user/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
+      dispatch(fetchUsers());
       return {
         data: res.data,
+        status: res.status,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        data: err.response?.data,
+        status: err.response?.status,
+      });
+    }
+  },
+);
+
+export const updateUser = createAsyncThunk(
+  "users/updateUser",
+  async ({ id, formData }, { dispatch, rejectWithValue }) => {
+    try {
+      const res = await api.put(`/people/user/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      dispatch(fetchUsers());
+      return {
+        id,
+        data: res.data,
+        status: res.status,
+      };
+    } catch (err) {
+      return rejectWithValue({
+        data: err.response?.data,
+        status: err.response?.status,
+      });
+    }
+  },
+);
+
+export const deleteUser = createAsyncThunk(
+  "users/deleteUser",
+  async (id, { dispatch, rejectWithValue }) => {
+    try {
+      const res = await api.delete(`/people/user/${id}`);
+      dispatch(fetchUsers());
+      return {
+        id,
         status: res.status,
       };
     } catch (err) {
@@ -84,6 +125,7 @@ export const fetchUserStatus = createAsyncThunk(
   },
 );
 
+/* ================= SLICE ================= */
 const userSlice = createSlice({
   name: "users",
   initialState: {
@@ -98,23 +140,16 @@ const userSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      /* ================= CREATE USER ================= */
-      .addCase(createUser.pending, (state) => {
+      .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
-      .addCase(createUser.fulfilled, (state, action) => {
+      .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users.push(action.payload.data);
+        state.users = action.payload;
       })
-      .addCase(createUser.rejected, (state, action) => {
+      .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-
-      /* ================= FETCH DATA ================= */
-      .addCase(fetchUsers.fulfilled, (state, action) => {
-        state.users = action.payload;
       })
       .addCase(fetchCompanies.fulfilled, (state, action) => {
         state.companies = action.payload;

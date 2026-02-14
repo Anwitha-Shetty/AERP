@@ -3,26 +3,39 @@ import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import { useEffect, useRef, useState } from "react";
-import { FiInfo, FiSave, FiUsers } from "react-icons/fi";
+import { FiInfo, FiSave } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createUser,
+  createCompany,
   fetchCompanies,
-  fetchUserTypes,
-  fetchPositions,
-  fetchUserStatus,
+  fetchCompanyStatus,
   fetchUsers,
-} from "../../../store/slices/userSlice";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+  fetchCurrencies,
+  fetchCountries,
+  fetchStates,
+  fetchCities,
+  fetchLanguages,
+  fetchBusinessAreas,
+  fetchBusinessSectors,
+} from "../../../store/slices/companySlice";
+import { FaBuilding } from "react-icons/fa";
 
-const CreateUser = () => {
+const CreateCompany = () => {
   const dispatch = useDispatch();
-  const { companies, userTypes, positions, statuses, users } = useSelector(
-    (state) => state.users,
-  );
+  const {
+    companies,
+    users,
+    statuses,
+    currencies,
+    countries,
+    states,
+    cities,
+    languages,
+    businessareas,
+    businesssectors,
+  } = useSelector((state) => state.companies);
 
   const photoRef = useRef(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [actionType, setActionType] = useState("");
@@ -37,31 +50,34 @@ const CreateUser = () => {
   };
 
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    password: "",
-    is_active: "",
-    user_code: "",
-    user_photo: null,
-    user_company: "",
-    user_type: "",
-    position: "",
+    organization_id: "",
+    company_name: "",
+    company_code: "",
+    company_description: "",
+    parent_company: "",
+    company_logo: null,
+    company_admin: "",
+    currency: "",
     status: "",
-    manager: "",
-    phone_number: "",
-    emergency_contact: "",
-    relationship_emergency_contact: "",
-    remarks: "",
+    country: "",
+    state: "",
+    city: "",
+    language: "",
+    business_area: "",
+    business_sector: "",
   });
 
   useEffect(() => {
     dispatch(fetchCompanies());
-    dispatch(fetchUserTypes());
-    dispatch(fetchPositions());
-    dispatch(fetchUserStatus());
+    dispatch(fetchCompanyStatus());
     dispatch(fetchUsers());
+    dispatch(fetchCurrencies());
+    dispatch(fetchCountries());
+    dispatch(fetchStates());
+    dispatch(fetchCities());
+    dispatch(fetchLanguages());
+    dispatch(fetchBusinessAreas());
+    dispatch(fetchBusinessSectors());
   }, [dispatch]);
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -131,18 +147,18 @@ const CreateUser = () => {
     setActionType("Save");
 
     if (
-      !formData.username ||
-      !formData.password ||
-      !formData.email ||
-      !formData.first_name ||
-      !formData.is_active ||
-      !formData.user_code ||
-      !formData.user_company ||
-      !formData.user_type ||
-      !formData.position ||
-      !formData.phone_number ||
-      !formData.emergency_contact ||
-      !formData.relationship_emergency_contact
+      !formData.organization_id ||
+      !formData.company_code ||
+      !formData.company_name ||
+      !formData.parent_company ||
+      !formData.company_admin ||
+      !formData.country ||
+      !formData.currency ||
+      !formData.state ||
+      !formData.city ||
+      !formData.language ||
+      !formData.business_area ||
+      !formData.business_sector
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -159,37 +175,35 @@ const CreateUser = () => {
 
     const file = photoRef.current?.files?.[0];
     if (file) {
-      submitData.append("user_photo", file);
+      submitData.append("company_logo", file);
     }
 
     try {
-      const res = await dispatch(createUser(submitData)).unwrap();
+      const res = await dispatch(createCompany(submitData)).unwrap();
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("User created successfully!", "success");
+        showTemporaryMessage("Company created successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("User create accepted!", "success");
+        showTemporaryMessage("Company create accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
       }
       setFormData({
-        username: "",
-        email: "",
-        first_name: "",
-        last_name: "",
-        password: "",
-        is_active: "",
-        user_code: "",
-        user_photo: null,
-        user_company: "",
-        user_type: "",
-        position: "",
+        organization_id: "",
+        company_name: "",
+        company_code: "",
+        company_description: "",
+        parent_company: "",
+        company_logo: null,
+        company_admin: "",
+        currency: "",
         status: "",
-        manager: "",
-        phone_number: "",
-        emergency_contact: "",
-        relationship_emergency_contact: "",
-        remarks: "",
+        country: "",
+        state: "",
+        city: "",
+        language: "",
+        business_area: "",
+        business_sector: "",
       });
 
       if (photoRef.current) {
@@ -221,7 +235,7 @@ const CreateUser = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to create user!", "error");
+        showTemporaryMessage("Failed to create Company!", "error");
       }
     }
 
@@ -291,9 +305,9 @@ const CreateUser = () => {
                   <div className="animate-fadeIn rounded border border-gray-200">
                     <div className="px-6 flex justify-between items-center border-b-2 border-gray-200">
                       <div className="flex items-center gap-2 mt-4 pb-1">
-                        <FiUsers className="text-amber-400 text-lg" />
+                        <FaBuilding className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create User
+                          Create Company
                         </h2>
                       </div>
 
@@ -309,131 +323,82 @@ const CreateUser = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Username <span className="text-red-500">*</span>
+                            Organization ID{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="username"
-                            placeholder="Enter Username"
-                            value={formData.username}
+                            name="organization_id"
+                            placeholder="Enter Organization ID"
+                            value={formData.organization_id}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Password <span className="text-red-500">*</span>
-                          </label>
-
-                          <div className="relative flex-1 w-full">
-                            <input
-                              type={showPassword ? "text" : "password"}
-                              name="password"
-                              placeholder="Enter Password"
-                              value={formData.password}
-                              onChange={handleChange}
-                              className="flex-1 w-full form-input pr-10"
-                            />
-
-                            <span
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
-                            >
-                              {showPassword ? <FaEye /> : <FaEyeSlash />}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Email ID <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="email"
-                            name="email"
-                            placeholder="Enter Email ID"
-                            className="flex-1 w-full form-input"
-                            value={formData.email}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            First Name <span className="text-red-500">*</span>
+                            Company Code <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="first_name"
-                            placeholder="Enter First Name"
-                            className="flex-1 w-full form-input"
-                            value={formData.first_name}
+                            name="company_code"
+                            placeholder="Enter Company Code"
+                            value={formData.company_code}
                             onChange={handleChange}
+                            className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Last Name
+                            Company Name <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="last_name"
-                            placeholder="Enter Last Name"
-                            className="flex-1 w-full form-input"
-                            value={formData.last_name}
+                            name="company_name"
+                            placeholder="Enter Company Name"
+                            value={formData.company_name}
                             onChange={handleChange}
+                            className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Active <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="is_active"
-                            value={formData.is_active}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Photo
+                            Logo
                           </label>
                           <input
                             type="file"
-                            name="user_photo"
+                            name="company_logo"
                             accept="image/png, image/jpeg"
                             ref={photoRef}
                             onChange={handlePhotoChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-start col-span-2">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Code <span className="text-red-500">*</span>
+                            Description
                           </label>
-                          <input
-                            type="text"
-                            name="user_code"
-                            placeholder="Enter User Code"
-                            className="flex-1 w-full form-input"
-                            value={formData.user_code}
+                          <textarea
+                            name="company_description"
+                            value={formData.company_description}
                             onChange={handleChange}
-                          />
+                            rows={2}
+                            className="flex-1 w-full textarea-input"
+                            placeholder="Enter company description..."
+                          ></textarea>
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Company <span className="text-red-500">*</span>
+                            Parent Company{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <select
-                            name="user_company"
-                            value={formData.user_company}
+                            name="parent_company"
+                            value={formData.parent_company}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select User Company</option>
+                            <option value="">Select Parent Company</option>
                             {companies.map((cp) => (
                               <option key={cp.id} value={cp.id}>
                                 {cp.company_code} - {cp.company_name}
@@ -443,51 +408,16 @@ const CreateUser = () => {
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Type <span className="text-red-500">*</span>
+                            Company Admin{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <select
-                            name="user_type"
-                            value={formData.user_type}
+                            name="company_admin"
+                            value={formData.company_admin}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select User Type</option>
-                            {userTypes.map((ut) => (
-                              <option key={ut.id} value={ut.id}>
-                                {ut.type}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Position <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="position"
-                            value={formData.position}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select Position</option>
-                            {positions.map((ps) => (
-                              <option key={ps.id} value={ps.id}>
-                                {ps.position}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Manager
-                          </label>
-                          <select
-                            name="manager"
-                            value={formData.manager}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select Manager</option>
+                            <option value="">Select Company Admin</option>
                             {users.map((user) => (
                               <option key={user.id} value={user.id}>
                                 {user.username} - {user.email}
@@ -495,50 +425,133 @@ const CreateUser = () => {
                             ))}
                           </select>
                         </div>
-
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Mobile No <span className="text-red-500">*</span>
+                            Currency <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="phone_number"
-                            placeholder="Enter Mobile No"
-                            className="flex-1 w-full form-input"
-                            maxLength={10}
-                            value={formData.phone_number}
+                          <select
+                            name="currency"
+                            value={formData.currency}
                             onChange={handleChange}
-                          />
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select Currency</option>
+                            {currencies.map((cr) => (
+                              <option key={cr.id} value={cr.id}>
+                                {cr.currency_code} - {cr.currency_name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Emergency Mobile No{" "}
-                            <span className="text-red-500">*</span>
+                            Country <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="emergency_contact"
-                            placeholder="Enter Emergency Mobile No"
-                            className="flex-1 w-full form-input"
-                            maxLength={10}
-                            value={formData.emergency_contact}
+                          <select
+                            name="country"
+                            value={formData.country}
                             onChange={handleChange}
-                          />
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select Country</option>
+                            {countries.map((ct) => (
+                              <option key={ct.id} value={ct.id}>
+                                {ct.country_name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Relation Mobile No{" "}
+                            State <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select State</option>
+                            {states.map((st) => (
+                              <option key={st.id} value={st.id}>
+                                {st.state_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            City <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="city"
+                            value={formData.city}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select City</option>
+                            {cities.map((cs) => (
+                              <option key={cs.id} value={cs.id}>
+                                {cs.city_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Language <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="language"
+                            value={formData.language}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select Language</option>
+                            {languages.map((lg) => (
+                              <option key={lg.id} value={lg.id}>
+                                {lg.language_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Business Area{" "}
                             <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="relationship_emergency_contact"
-                            placeholder="Enter Relation Mobile No"
-                            className="flex-1 w-full form-input"
-                            maxLength={10}
-                            value={formData.relationship_emergency_contact}
+                          <select
+                            name="business_area"
+                            value={formData.business_area}
                             onChange={handleChange}
-                          />
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select Business Area</option>
+                            {businessareas.map((ba) => (
+                              <option key={ba.id} value={ba.id}>
+                                {ba.business_area}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Business Sector{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="business_sector"
+                            value={formData.business_sector}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select Business Sector</option>
+                            {businesssectors.map((bs) => (
+                              <option key={bs.id} value={bs.id}>
+                                {bs.business_sector}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
@@ -557,19 +570,6 @@ const CreateUser = () => {
                               </option>
                             ))}
                           </select>
-                        </div>
-                        <div className="flex items-start col-span-2">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Remarks
-                          </label>
-                          <textarea
-                            name="remarks"
-                            value={formData.remarks}
-                            onChange={handleChange}
-                            rows={2}
-                            className="flex-1 w-full textarea-input"
-                            placeholder="Enter remarks..."
-                          ></textarea>
                         </div>
                       </div>
                     </div>
@@ -603,4 +603,4 @@ const CreateUser = () => {
   );
 };
 
-export default CreateUser;
+export default CreateCompany;

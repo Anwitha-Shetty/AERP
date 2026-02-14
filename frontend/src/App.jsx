@@ -9,6 +9,8 @@ import MaterialTypes from "./pages/admin/materials/MaterialTypes";
 import MaterialMaster from "./pages/admin/materials/MaterialMaster";
 import CreateUser from "./pages/admin/enterprisestructure/CreateUser";
 import ViewUsers from "./pages/admin/enterprisestructure/ViewUsers";
+import CreateCompany from "./pages/admin/enterprisestructure/CreateCompany";
+import ViewCompany from "./pages/admin/enterprisestructure/ViewCompany";
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         {/* Enterprise Structure */}
         <Route path="/admin/users/create" element={<CreateUser />} />
         <Route path="/admin/users/view" element={<ViewUsers />} />
+        <Route path="/admin/company/create" element={<CreateCompany />} />
+        <Route path="/admin/company/view" element={<ViewCompany />} />
 
         {/* Vendors */}
         <Route path="/admin/vender-types" element={<VenderTypes />} />

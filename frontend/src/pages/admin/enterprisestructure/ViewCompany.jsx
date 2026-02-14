@@ -3,32 +3,45 @@ import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { useEffect, useRef, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
-import {
-  FiAlertTriangle,
-  FiEdit,
-  FiEye,
-  FiInfo,
-  FiPlus,
-  FiUsers,
-} from "react-icons/fi";
+import { FiAlertTriangle, FiEdit, FiEye, FiInfo, FiPlus } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchUsers,
-  updateUser,
-  deleteUser,
   fetchCompanies,
-  fetchUserTypes,
-  fetchPositions,
-  fetchUserStatus,
-} from "../../../store/slices/userSlice";
-import { FaEye, FaEyeSlash, FaTimes, FaTrashAlt } from "react-icons/fa";
+  updateCompany,
+  deleteCompany,
+  fetchCompanyStatus,
+  fetchUsers,
+  fetchCurrencies,
+  fetchCountries,
+  fetchStates,
+  fetchCities,
+  fetchLanguages,
+  fetchBusinessAreas,
+  fetchBusinessSectors,
+} from "../../../store/slices/companySlice";
+import {
+  FaBuilding,
+  FaEye,
+  FaEyeSlash,
+  FaTimes,
+  FaTrashAlt,
+} from "react-icons/fa";
 import api from "../../../utils/api";
 
-const ViewUsers = () => {
+const ViewCompany = () => {
   const dispatch = useDispatch();
-  const { users, companies, userTypes, positions, statuses } = useSelector(
-    (state) => state.users,
-  );
+  const {
+    companies,
+    users,
+    statuses,
+    currencies,
+    countries,
+    states,
+    cities,
+    languages,
+    businessareas,
+    businesssectors,
+  } = useSelector((state) => state.companies);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,18 +53,22 @@ const ViewUsers = () => {
   const rowsPerPage = 7;
 
   useEffect(() => {
-    dispatch(fetchUsers());
     dispatch(fetchCompanies());
-    dispatch(fetchUserTypes());
-    dispatch(fetchPositions());
-    dispatch(fetchUserStatus());
+    dispatch(fetchCompanyStatus());
+    dispatch(fetchUsers());
+    dispatch(fetchCurrencies());
+    dispatch(fetchCountries());
+    dispatch(fetchStates());
+    dispatch(fetchCities());
+    dispatch(fetchLanguages());
+    dispatch(fetchBusinessAreas());
+    dispatch(fetchBusinessSectors());
   }, [dispatch]);
 
-  const [showPassword, setShowPassword] = useState(false);
   const photoRef = useRef(null);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -67,33 +84,31 @@ const ViewUsers = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    password: "",
-    is_active: "",
-    user_code: "",
-    user_photo: null,
-    user_company: "",
-    user_type: "",
-    position: "",
+    organization_id: "",
+    company_name: "",
+    company_code: "",
+    company_description: "",
+    parent_company: "",
+    company_logo: null,
+    company_admin: "",
+    currency: "",
     status: "",
-    manager: "",
-    phone_number: "",
-    emergency_contact: "",
-    relationship_emergency_contact: "",
-    remarks: "",
+    country: "",
+    state: "",
+    city: "",
+    language: "",
+    business_area: "",
+    business_sector: "",
   });
 
   const [existingFiles, setExistingFiles] = useState({
-    user_photo: "",
+    company_logo: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -131,10 +146,10 @@ const ViewUsers = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedUsers.length > 0) {
+      if (isBulkDelete && selectedCompanies.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedUsers),
-          fullLabel: selectedUsers.join(", "),
+          label: formatIdsWithEllipsis(selectedCompanies),
+          fullLabel: selectedCompanies.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -172,8 +187,8 @@ const ViewUsers = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedUser?.id) {
-      updateBreadcrumbs("View", selectedUser.id);
+    } else if (showConfirm && selectedCompany?.id) {
+      updateBreadcrumbs("View", selectedCompany.id);
     } else {
       updateBreadcrumbs();
     }
@@ -182,9 +197,9 @@ const ViewUsers = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedUsers,
+    selectedCompanies,
     editId,
-    selectedUser,
+    selectedCompany,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -216,34 +231,31 @@ const ViewUsers = () => {
     }
     setFormData((prev) => ({
       ...prev,
-      user_photo: file,
+      company_logo: file,
     }));
   };
 
-  const handleOpenEdit = (user) => {
-    setEditId(user.id);
+  const handleOpenEdit = (company) => {
+    setEditId(company.id);
     setFormData({
-      username: user.username || "",
-      email: user.email || "",
-      first_name: user.first_name || "",
-      last_name: user.last_name || "",
-      password: "",
-      is_active:
-        user.is_active === null ? "" : user.is_active ? "true" : "false",
-      user_code: user.user_code || "",
-      user_photo: null,
-      user_company: user.user_company?.id || "",
-      user_type: user.user_type?.id || "",
-      position: user.position?.id || "",
-      status: user.status?.id || "",
-      manager: user.manager?.id || "",
-      phone_number: user.phone_number || "",
-      emergency_contact: user.emergency_contact || "",
-      relationship_emergency_contact: user.relationship_emergency_contact || "",
-      remarks: user.remarks || "",
+      organization_id: company.organization_id || "",
+      company_name: company.company_name || "",
+      company_code: company.company_code || "",
+      company_description: company.company_description || "",
+      parent_company: company.parent_company?.id || "",
+      company_logo: null,
+      company_admin: company.company_admin?.id || "",
+      currency: company.currency?.id || "",
+      status: company.status?.id || "",
+      country: company.country?.id || "",
+      state: company.state?.id || "",
+      city: company.city?.id || "",
+      language: company.language?.id || "",
+      business_area: company.business_area?.id || "",
+      business_sector: company.business_sector?.id || "",
     });
     setExistingFiles({
-      user_photo: user.user_photo || "",
+      company_logo: company.company_logo || "",
     });
     setShowEditModal(true);
   };
@@ -254,16 +266,15 @@ const ViewUsers = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (key === "password") {
-        if (formData.password) {
-          data.append("password", formData.password);
+      if (key === "company_logo") {
+        if (formData.company_logo instanceof File) {
+          data.append("company_logo", formData.company_logo);
         }
-      } else if (key === "user_photo") {
-        if (formData.user_photo instanceof File) {
-          data.append("user_photo", formData.user_photo);
-        }
-      } else if (key === "remarks") {
-        data.append("remarks", formData.remarks ?? null);
+      } else if (key === "company_description") {
+        data.append(
+          "company_description",
+          formData.company_description ?? null,
+        );
       } else {
         if (formData[key] !== undefined && formData[key] !== null) {
           data.append(key, formData[key]);
@@ -272,17 +283,18 @@ const ViewUsers = () => {
     });
 
     if (
-      !formData.username ||
-      !formData.email ||
-      !formData.first_name ||
-      !formData.is_active ||
-      !formData.user_code ||
-      !formData.user_company ||
-      !formData.user_type ||
-      !formData.position ||
-      !formData.phone_number ||
-      !formData.emergency_contact ||
-      !formData.relationship_emergency_contact
+      !formData.organization_id ||
+      !formData.company_code ||
+      !formData.company_name ||
+      !formData.parent_company ||
+      !formData.company_admin ||
+      !formData.country ||
+      !formData.currency ||
+      !formData.state ||
+      !formData.city ||
+      !formData.language ||
+      !formData.business_area ||
+      !formData.business_sector
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -291,13 +303,13 @@ const ViewUsers = () => {
 
     try {
       const res = await dispatch(
-        updateUser({ id: editId, formData: data }),
+        updateCompany({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("User updated successfully!", "success");
+        showTemporaryMessage("Company updated successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("User update accepted!", "success");
+        showTemporaryMessage("Company update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -341,26 +353,24 @@ const ViewUsers = () => {
     setEditId(null);
 
     setFormData({
-      username: "",
-      email: "",
-      first_name: "",
-      last_name: "",
-      password: "",
-      is_active: "",
-      user_code: "",
-      user_photo: null,
-      user_company: "",
-      user_type: "",
-      position: "",
+      organization_id: "",
+      company_name: "",
+      company_code: "",
+      company_description: "",
+      parent_company: "",
+      company_logo: null,
+      company_admin: "",
+      currency: "",
       status: "",
-      manager: "",
-      phone_number: "",
-      emergency_contact: "",
-      relationship_emergency_contact: "",
-      remarks: "",
+      country: "",
+      state: "",
+      city: "",
+      language: "",
+      business_area: "",
+      business_sector: "",
     });
 
-    setExistingFiles({ user_photo: "" });
+    setExistingFiles({ company_logo: "" });
   };
 
   // ----------------- Delete handlers -----------------
@@ -371,32 +381,32 @@ const ViewUsers = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedUsers.length === 0) return;
+    if (selectedCompanies.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedUsers.length > 0) {
+      if (isBulkDelete && selectedCompanies.length > 0) {
         const res = await Promise.all(
-          selectedUsers.map((id) => dispatch(deleteUser(id)).unwrap()),
+          selectedCompanies.map((id) => dispatch(deleteCompany(id)).unwrap()),
         );
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("User deleted successfully!", "success");
+          showTemporaryMessage("Company deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("User delete accepted!", "success");
+          showTemporaryMessage("Company delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedUsers([]);
+        setSelectedCompanies([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteUser(deleteId)).unwrap();
+        const res = await dispatch(deleteCompany(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("User deleted successfully!", "success");
+          showTemporaryMessage("Company deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("User delete accepted!", "success");
+          showTemporaryMessage("Company delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -432,30 +442,26 @@ const ViewUsers = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete user!", "error");
+        showTemporaryMessage("Failed to delete Company!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredUsers = users.filter((user) => {
+  const filteredCompanies = companies.filter((company) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
-    let activeText = "";
-    if (user?.is_active === true) activeText = "yes";
-    else if (user?.is_active === false) activeText = "no";
+
     return (
-      normalize(user?.username).includes(search) ||
-      normalize(user?.email).includes(search) ||
-      normalize(user?.phone_number).includes(search) ||
-      normalize(user?.manager?.username).includes(search) ||
-      normalize(activeText).includes(search)
+      normalize(company?.company_name).includes(search) ||
+      normalize(company?.parent_company?.company_name).includes(search) ||
+      normalize(company?.status?.status).includes(search)
     );
   });
 
   // ---------------- SORT LOGIC ----------------
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
+  const sortedCompanies = [...filteredCompanies].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
     let aValue = a[sortConfig.key];
@@ -480,9 +486,9 @@ const ViewUsers = () => {
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(sortedUsers.length / rowsPerPage);
+  const totalPages = Math.ceil(sortedCompanies.length / rowsPerPage);
 
-  const paginatedUsers = sortedUsers.slice(
+  const paginatedCompanies = sortedCompanies.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -563,8 +569,10 @@ const ViewUsers = () => {
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             {/* Left Section */}
             <div className="flex items-center gap-2">
-              <FiUsers className="text-amber-400 text-lg" />
-              <h1 className="text-lg font-bold text-gray-800">View Users</h1>
+              <FaBuilding className="text-amber-400 text-lg" />
+              <h1 className="text-lg font-bold text-gray-800">
+                View Companies
+              </h1>
             </div>
             {/* Right Section */}
             <div className="flex items-center gap-2">
@@ -577,20 +585,20 @@ const ViewUsers = () => {
               />
 
               <Link
-                to="/admin/users/create"
+                to="/admin/company/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create User
+                <FiPlus /> Create Company
               </Link>
 
-              {selectedUsers.length > 1 && (
+              {selectedCompanies.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedUsers.length}
+                    {selectedCompanies.length}
                   </span>
                 </button>
               )}
@@ -606,19 +614,19 @@ const ViewUsers = () => {
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {users.length <= 1 ? (
+                      {companies.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            users.length > 1 &&
-                            selectedUsers.length === users.length
+                            companies.length > 1 &&
+                            selectedCompanies.length === companies.length
                           }
                           onChange={(e) =>
-                            setSelectedUsers(
+                            setSelectedCompanies(
                               e.target.checked
-                                ? users.map((user) => user.id)
+                                ? users.map((company) => company.id)
                                 : [],
                             )
                           }
@@ -627,10 +635,9 @@ const ViewUsers = () => {
                       )}
                     </th>
                     {[
-                      { label: "USERNAME", key: "username" },
-                      { label: "EMAIL ID", key: "email" },
-                      { label: "MOBILE NO", key: "phone_number" },
-                      { label: "MANAGER", key: "manager" },
+                      { label: "COMPANY NAME", key: "company_name" },
+                      { label: "PARENT COMPANY", key: "parent_company" },
+                      { label: "STATUS", key: "status" },
                     ].map((head, idx) => (
                       <th
                         key={idx}
@@ -646,66 +653,45 @@ const ViewUsers = () => {
                       </th>
                     ))}
                     <th className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap">
-                      ACTIVE
-                    </th>
-                    <th className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap">
                       ACTIONS
                     </th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-gray-800">
-                  {users.length > 0 ? (
-                    paginatedUsers.map((user) => (
+                  {companies.length > 0 ? (
+                    paginatedCompanies.map((company) => (
                       <tr
-                        key={user.id}
+                        key={company.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedUsers.includes(user.id)}
+                            checked={selectedCompanies.includes(company.id)}
                             onChange={() =>
-                              setSelectedUsers((prev) =>
-                                prev.includes(user.id)
-                                  ? prev.filter((x) => x !== user.id)
-                                  : [...prev, user.id],
+                              setSelectedCompanies((prev) =>
+                                prev.includes(company.id)
+                                  ? prev.filter((x) => x !== company.id)
+                                  : [...prev, company.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.username || "--"}
+                          {company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.email || "--"}
+                          {company?.parent_company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.phone_number || "--"}
-                        </td>
-                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.manager?.username || "--"}
-                        </td>
-                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.is_active == null ? (
-                            "--"
-                          ) : (
-                            <span
-                              className={
-                                user?.is_active
-                                  ? "text-green-600"
-                                  : "text-red-500"
-                              }
-                            >
-                              {user?.is_active ? "Yes" : "No"}
-                            </span>
-                          )}
+                          {company?.status?.status || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(user)}
+                              onClick={() => handleOpenEdit(company)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -713,8 +699,8 @@ const ViewUsers = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedUser(user);
-                                updateBreadcrumbs("View", user.id);
+                                setSelectedCompany(company);
+                                updateBreadcrumbs("View", company.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -723,7 +709,7 @@ const ViewUsers = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(user.id)}
+                              onClick={() => handleDelete(company.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -736,10 +722,10 @@ const ViewUsers = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={5}
                         className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
-                        No users found!
+                        No companies found!
                       </td>
                     </tr>
                   )}
@@ -808,14 +794,14 @@ const ViewUsers = () => {
       </main>
 
       {/* Confirmation Modal */}
-      {showConfirm && selectedUser && (
+      {showConfirm && selectedCompany && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <FiUsers className="text-amber-400 text-lg" />
+                <FaBuilding className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View User
+                  View Company
                 </h2>
               </div>
 
@@ -833,81 +819,29 @@ const ViewUsers = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Username:
+                      Company Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.username || "--"}
+                      {selectedCompany?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Email ID:
+                      Logo:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.email || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      First Name:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.first_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Last Name:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.last_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Active:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.is_active == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedUser?.is_active
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedUser?.is_active ? "Yes" : "No"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Code:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_code || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Photo:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_photo ? (
+                      {selectedCompany?.company_logo ? (
                         <a
                           href={
-                            selectedUser.user_photo.startsWith("http")
-                              ? selectedUser.user_photo
-                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedUser.user_photo}`
+                            selectedCompany.company_logo.startsWith("http")
+                              ? selectedCompany.company_logo
+                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedCompany.company_logo}`
                           }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-amber-400"
                         >
-                          {selectedUser.user_photo.split("/").pop()}
+                          {selectedCompany.company_logo.split("/").pop()}
                         </a>
                       ) : (
                         "--"
@@ -916,74 +850,10 @@ const ViewUsers = () => {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Company:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_company?.company_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Type:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_type?.type || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Position:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.position?.position || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
                       Status:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.status?.status || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Manager:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.manager?.username || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.phone_number || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Emergency Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.emergency_contact || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Relation Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.relationship_emergency_contact || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left align-top">
-                      Remarks:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedUser?.remarks || "--"}
+                      {selectedCompany?.status?.status || "--"}
                     </td>
                   </tr>
                 </tbody>
@@ -999,9 +869,9 @@ const ViewUsers = () => {
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <FiUsers className="text-amber-400 text-lg" />
+                <FaBuilding className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change User
+                  Change Company
                 </h2>
               </div>
               <button
@@ -1015,140 +885,90 @@ const ViewUsers = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Username <span className="text-red-500">*</span>
+                  Organization ID <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="username"
-                  placeholder="Username"
-                  value={formData.username}
+                  name="organization_id"
+                  placeholder="Enter Organization ID"
+                  value={formData.organization_id}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Password <span className="text-red-500">*</span>
-                </label>
-
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full form-input pr-10"
-                  />
-
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
-                  >
-                    {showPassword ? <FaEye /> : <FaEyeSlash />}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Email ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  className="form-input"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  First Name <span className="text-red-500">*</span>
+                  Company Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="first_name"
-                  placeholder="First Name"
-                  className="form-input"
-                  value={formData.first_name}
+                  name="company_code"
+                  placeholder="Enter Company Code"
+                  value={formData.company_code}
                   onChange={handleChange}
+                  className="form-input"
                 />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Last Name</label>
-                <input
-                  type="text"
-                  name="last_name"
-                  placeholder="Enter Last Name"
-                  className="form-input"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Active <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="is_active"
-                  value={formData.is_active}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
               </div>
               <div className="flex flex-col col-span-2">
-                <label className="form-label">Photo</label>
+                <label className="form-label">
+                  Company Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="company_name"
+                  placeholder="Enter Company Name"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Logo</label>
                 <input
                   type="file"
-                  name="user_photo"
+                  name="company_logo"
                   accept="image/png, image/jpeg"
                   ref={photoRef}
                   onChange={handlePhotoChange}
                   className="form-input"
                 />
-                {existingFiles.user_photo && (
+                {existingFiles.company_logo && (
                   <a
                     href={
-                      existingFiles.user_photo.startsWith("http")
-                        ? existingFiles.user_photo
-                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.user_photo}`
+                      existingFiles.company_logo.startsWith("http")
+                        ? existingFiles.company_logo
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.company_logo}`
                     }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-amber-400"
                   >
-                    {existingFiles.user_photo.split("/").pop()}
+                    {existingFiles.company_logo.split("/").pop()}
                   </a>
                 )}
               </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="user_code"
-                  placeholder="Enter User Code"
-                  className="form-input"
-                  value={formData.user_code}
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Description</label>
+                <textarea
+                  name="company_description"
+                  value={formData.company_description}
                   onChange={handleChange}
-                />
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter company description..."
+                ></textarea>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Company <span className="text-red-500">*</span>
+                  Parent Company <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="user_company"
-                  value={formData.user_company}
+                  name="parent_company"
+                  value={formData.parent_company}
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select User Company</option>
+                  <option value="">Select Parent Company</option>
                   {companies.map((cp) => (
                     <option key={cp.id} value={cp.id}>
                       {cp.company_code} - {cp.company_name}
@@ -1158,49 +978,15 @@ const ViewUsers = () => {
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Type <span className="text-red-500">*</span>
+                  Company Admin <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="user_type"
-                  value={formData.user_type}
+                  name="company_admin"
+                  value={formData.company_admin}
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select User Type</option>
-                  {userTypes.map((ut) => (
-                    <option key={ut.id} value={ut.id}>
-                      {ut.type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Position <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="position"
-                  value={formData.position}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select Position</option>
-                  {positions.map((ps) => (
-                    <option key={ps.id} value={ps.id}>
-                      {ps.position}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Manager</label>
-                <select
-                  name="manager"
-                  value={formData.manager}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select Manager</option>
+                  <option value="">Select Company Admin</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username} - {user.email}
@@ -1210,45 +996,129 @@ const ViewUsers = () => {
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Mobile No <span className="text-red-500">*</span>
+                  Currency <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="phone_number"
-                  placeholder="Enter Mobile No"
-                  className="form-input"
-                  maxLength={10}
-                  value={formData.phone_number}
+                <select
+                  name="currency"
+                  value={formData.currency}
                   onChange={handleChange}
-                />
+                  className="form-input"
+                >
+                  <option value="">Select Currency</option>
+                  {currencies.map((cr) => (
+                    <option key={cr.id} value={cr.id}>
+                      {cr.currency_code} - {cr.currency_name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Emergency Mobile No <span className="text-red-500">*</span>
+                  Country <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="emergency_contact"
-                  placeholder="Enter Emergency Contact"
-                  className="form-input"
-                  maxLength={10}
-                  value={formData.emergency_contact}
+                <select
+                  name="country"
+                  value={formData.country}
                   onChange={handleChange}
-                />
+                  className="form-input"
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((ct) => (
+                    <option key={ct.id} value={ct.id}>
+                      {ct.country_name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Relation Mobile No <span className="text-red-500">*</span>
+                  State <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="relationship_emergency_contact"
-                  placeholder="Enter Relation Mobile No"
-                  className="form-input"
-                  maxLength={10}
-                  value={formData.relationship_emergency_contact}
+                <select
+                  name="state"
+                  value={formData.state}
                   onChange={handleChange}
-                />
+                  className="form-input"
+                >
+                  <option value="">Select State</option>
+                  {states.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.state_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select City</option>
+                  {cities.map((cs) => (
+                    <option key={cs.id} value={cs.id}>
+                      {cs.city_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Language <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="language"
+                  value={formData.language}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select Language</option>
+                  {languages.map((lg) => (
+                    <option key={lg.id} value={lg.id}>
+                      {lg.language_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Business Area <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="business_area"
+                  value={formData.business_area}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select Business Area</option>
+                  {businessareas.map((ba) => (
+                    <option key={ba.id} value={ba.id}>
+                      {ba.business_area}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Business Sector <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="business_sector"
+                  value={formData.business_sector}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select Business Sector</option>
+                  {businesssectors.map((bs) => (
+                    <option key={bs.id} value={bs.id}>
+                      {bs.business_sector}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">Status</label>
@@ -1265,17 +1135,6 @@ const ViewUsers = () => {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">Remarks</label>
-                <textarea
-                  name="remarks"
-                  value={formData.remarks}
-                  onChange={handleChange}
-                  rows={2}
-                  className="textarea-input"
-                  placeholder="Enter remarks..."
-                ></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
@@ -1316,7 +1175,7 @@ const ViewUsers = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedUsers([]);
+                  if (isBulkDelete) setSelectedCompanies([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -1332,4 +1191,4 @@ const ViewUsers = () => {
   );
 };
 
-export default ViewUsers;
+export default ViewCompany;
