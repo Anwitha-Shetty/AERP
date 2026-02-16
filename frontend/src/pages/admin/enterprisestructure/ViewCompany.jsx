@@ -3,7 +3,14 @@ import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { useEffect, useRef, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
-import { FiAlertTriangle, FiEdit, FiEye, FiInfo, FiPlus } from "react-icons/fi";
+import {
+  FiAlertTriangle,
+  FiEdit,
+  FiEye,
+  FiInfo,
+  FiPlus,
+  FiSearch,
+} from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchCompanies,
@@ -19,13 +26,7 @@ import {
   fetchBusinessAreas,
   fetchBusinessSectors,
 } from "../../../store/slices/companySlice";
-import {
-  FaBuilding,
-  FaEye,
-  FaEyeSlash,
-  FaTimes,
-  FaTrashAlt,
-} from "react-icons/fa";
+import { FaBuilding, FaTimes, FaTrashAlt } from "react-icons/fa";
 import api from "../../../utils/api";
 
 const ViewCompany = () => {
@@ -456,6 +457,8 @@ const ViewCompany = () => {
     return (
       normalize(company?.company_name).includes(search) ||
       normalize(company?.parent_company?.company_name).includes(search) ||
+      normalize(company?.company_admin?.username).includes(search) ||
+      normalize(company?.business_area?.business_area).includes(search) ||
       normalize(company?.status?.status).includes(search)
     );
   });
@@ -576,13 +579,17 @@ const ViewCompany = () => {
             </div>
             {/* Right Section */}
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-1.5 cursor-pointer rounded border h-8 border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"
-              />
+              <div className="relative">
+                <FiSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
+
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-3 pl-7 py-1.5 rounded border h-8 border-gray-300 text-sm outline-none"
+                />
+              </div>
 
               <Link
                 to="/admin/company/create"
@@ -626,7 +633,7 @@ const ViewCompany = () => {
                           onChange={(e) =>
                             setSelectedCompanies(
                               e.target.checked
-                                ? users.map((company) => company.id)
+                                ? companies.map((company) => company.id)
                                 : [],
                             )
                           }
@@ -637,6 +644,8 @@ const ViewCompany = () => {
                     {[
                       { label: "COMPANY NAME", key: "company_name" },
                       { label: "PARENT COMPANY", key: "parent_company" },
+                      { label: "COMPANY ADMIN", key: "company_admin" },
+                      { label: "BUSINESS AREA", key: "business_area" },
                       { label: "STATUS", key: "status" },
                     ].map((head, idx) => (
                       <th
@@ -686,6 +695,12 @@ const ViewCompany = () => {
                           {company?.parent_company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
+                          {company?.company_admin?.username || "--"}
+                        </td>
+                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
+                          {company?.business_area?.business_area || "--"}
+                        </td>
+                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           {company?.status?.status || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
@@ -722,7 +737,7 @@ const ViewCompany = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={7}
                         className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
                         No companies found!
@@ -819,6 +834,22 @@ const ViewCompany = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
+                      Organization ID:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.organization_id || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Company Code:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.company_code || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
                       Company Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
@@ -846,6 +877,90 @@ const ViewCompany = () => {
                       ) : (
                         "--"
                       )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Description:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedCompany?.company_description || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Parent Company:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.parent_company?.company_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Company Admin:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.company_admin?.username || "--"} -{" "}
+                      {selectedCompany?.company_admin?.email || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Currency:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.currency?.currency_code || "--"} -{" "}
+                      {selectedCompany?.currency?.currency_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Country:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.country?.country_code || "--"} -{" "}
+                      {selectedCompany?.country?.country_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      State:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.state?.state_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      City:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.city?.city_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Language:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.language?.language_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Business Area:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.business_area?.business_area || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Business Sector:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.business_sector?.business_sector ||
+                        "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -1025,7 +1140,7 @@ const ViewCompany = () => {
                   <option value="">Select Country</option>
                   {countries.map((ct) => (
                     <option key={ct.id} value={ct.id}>
-                      {ct.country_name}
+                      {ct.country_code} - {ct.country_name}
                     </option>
                   ))}
                 </select>
@@ -1168,7 +1283,7 @@ const ViewCompany = () => {
             <div className="flex justify-center gap-4 mt-4">
               <button
                 onClick={confirmDelete}
-                className="bg-amber-400 text-black font-medium py-2 px-4 rounded-md cursor-pointer"
+                className="bg-amber-400 text-black font-medium px-3 py-1.5 rounded-md cursor-pointer"
               >
                 Yes
               </button>
@@ -1179,7 +1294,7 @@ const ViewCompany = () => {
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
-                className="bg-gray-600 text-white font-medium py-2 px-4 rounded-md cursor-pointer"
+                className="bg-gray-600 text-white font-medium px-3 py-1.5 rounded-md cursor-pointer"
               >
                 No
               </button>

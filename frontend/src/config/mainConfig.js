@@ -48,12 +48,6 @@ const mainConfig = [
           },
         ],
       },
-      {
-        id: "assignUserstoCompanyMenu",
-        label: "Assign Users to Company",
-        path: "/admin/assign-users-to-company",
-        iconName: "FiUsers",
-      },
     ],
   },
   {
@@ -63,33 +57,44 @@ const mainConfig = [
     subMenu: [
       {
         id: "vendorManagementMenu",
-        label: "Vender Management",
+        label: "Vendor Management",
         iconName: "FiUsers",
         subMenu: [
           {
-            id: "vendorOnboardingMenu",
-            label: "Vender Onboarding",
-            path: "/admin/vender-onboarding",
+            id: "vendorTypesMenu",
+            label: "Vendor Types",
             iconName: "FiUsers",
             subMenu: [
               {
-                id: "vendorTypesMenu",
-                label: "Vender Types",
-                path: "/admin/vender-types",
+                id: "createVendorTypeMenu",
+                label: "Create Vendor Type",
+                path: "/admin/vendor-types/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorTypesMenu",
+                label: "View Vendor Types",
+                path: "/admin/vendor-types/view",
                 iconName: "FiUsers",
               },
             ],
           },
           {
+            id: "vendorOnboardingMenu",
+            label: "Vendor Onboarding",
+            path: "/admin/vendor-onboarding",
+            iconName: "FiUsers",
+          },
+          {
             id: "vendorMasterMenu",
-            label: "Vender Master",
-            path: "/admin/vender-master",
+            label: "Vendor Master",
+            path: "/admin/vendor-master",
             iconName: "FiUsers",
           },
           {
             id: "vendorAgreementsMenu",
-            label: "Vender Agreements",
-            path: "/admin/vender-agreements",
+            label: "Vendor Agreements",
+            path: "/admin/vendor-agreements",
             iconName: "FiUsers",
           },
         ],
@@ -101,9 +106,9 @@ const mainConfig = [
         iconName: "FaFileSignature",
       },
       {
-        id: "purchaseOrderGoodsRecieptMenu",
-        label: "Purchase Order Goods Reciept",
-        path: "/admin/purchase-order-goods-reciept",
+        id: "purchaseOrderGoodsReceiptMenu",
+        label: "Purchase Order Goods Receipt",
+        path: "/admin/purchase-order-goods-receipt",
         iconName: "FaFileSignature",
       },
       {

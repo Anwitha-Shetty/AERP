@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import VenderTypes from "./pages/admin/vendors/VenderTypes";
 import MaterialGroups from "./pages/admin/materials/MaterialGroups";
 import MaterialCategories from "./pages/admin/materials/MaterialCategories";
 import MaterialTypes from "./pages/admin/materials/MaterialTypes";
@@ -11,6 +10,8 @@ import CreateUser from "./pages/admin/enterprisestructure/CreateUser";
 import ViewUsers from "./pages/admin/enterprisestructure/ViewUsers";
 import CreateCompany from "./pages/admin/enterprisestructure/CreateCompany";
 import ViewCompany from "./pages/admin/enterprisestructure/ViewCompany";
+import ViewVenderTypes from "./pages/admin/vendors/ViewVenderTypes";
+import CreateVenderType from "./pages/admin/vendors/CreateVenderType";
 
 function App() {
   return (
@@ -27,7 +28,11 @@ function App() {
         <Route path="/admin/company/view" element={<ViewCompany />} />
 
         {/* Vendors */}
-        <Route path="/admin/vender-types" element={<VenderTypes />} />
+        <Route
+          path="/admin/vendor-types/create"
+          element={<CreateVenderType />}
+        />
+        <Route path="/admin/vendor-types/view" element={<ViewVenderTypes />} />
 
         {/* Materials */}
         <Route path="/admin/material-groups" element={<MaterialGroups />} />
