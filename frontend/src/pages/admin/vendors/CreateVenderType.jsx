@@ -8,7 +8,7 @@ import {
   createVenderType,
   fetchUsers,
   fetchCompanies,
-} from "../../../store/slices/venderSlice";
+} from "../../../store/slices/vendorTypesSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 const CreateVenderType = () => {

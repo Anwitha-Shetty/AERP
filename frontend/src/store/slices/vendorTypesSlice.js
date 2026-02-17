@@ -96,7 +96,7 @@ export const fetchCompanies = createAsyncThunk(
 );
 
 /* ================= SLICE ================= */
-const venderSlice = createSlice({
+const vendorTypesSlice = createSlice({
   name: "vendortypes",
   initialState: {
     vendortypes: [],
@@ -128,4 +128,4 @@ const venderSlice = createSlice({
   },
 });
 
-export default venderSlice.reducer;
+export default vendorTypesSlice.reducer;

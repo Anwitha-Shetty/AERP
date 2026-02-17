@@ -19,7 +19,7 @@ import {
   deleteVenderType,
   fetchUsers,
   fetchCompanies,
-} from "../../../store/slices/venderSlice";
+} from "../../../store/slices/vendorTypesSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 
 const ViewVenderTypes = () => {
@@ -674,7 +674,7 @@ const ViewVenderTypes = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedVendor(vendor);
+                                setSelectedVendorType(vendor);
                                 updateBreadcrumbs("View", vendor.id);
                                 setShowConfirm(true);
                               }}
@@ -802,10 +802,90 @@ const ViewVenderTypes = () => {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
+                      Short Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.short_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
                       Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
                       {selectedVendorType?.name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Description:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedVendorType?.description || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Service Provider:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.is_service_provider == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorType?.is_service_provider
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorType?.is_service_provider
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Material Supplier:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.is_material_supplier == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorType?.is_material_supplier
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorType?.is_material_supplier
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Requires Contract:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.requires_contract == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorType?.requires_contract
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorType?.requires_contract ? "Yes" : "No"}
+                        </span>
+                      )}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -830,6 +910,14 @@ const ViewVenderTypes = () => {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
+                      Sort Order:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.sort_order || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
@@ -842,14 +930,6 @@ const ViewVenderTypes = () => {
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
                       {selectedVendorType?.company?.company_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left align-top">
-                      Remarks:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedVendorType?.description || "--"}
                     </td>
                   </tr>
                 </tbody>

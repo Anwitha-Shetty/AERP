@@ -3,7 +3,7 @@ import authReducer from "./slices/authSlice";
 import sidebarReducer from "./slices/sidebarSlice";
 import userReducer from "./slices/userSlice";
 import companyReducer from "./slices/companySlice";
-import vendorReducer from "./slices/venderSlice";
+import vendorReducer from "./slices/vendorTypesSlice";
 
 const store = configureStore({
   reducer: {
