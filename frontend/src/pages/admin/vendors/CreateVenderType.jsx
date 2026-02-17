@@ -122,9 +122,9 @@ const CreateVenderType = () => {
     try {
       const res = await dispatch(createVenderType(submitData)).unwrap();
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Vendor created successfully!", "success");
+        showTemporaryMessage("Vendor Type created successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("Vendor create accepted!", "success");
+        showTemporaryMessage("Vendor Type create accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -168,7 +168,7 @@ const CreateVenderType = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to create vendor!", "error");
+        showTemporaryMessage("Failed to create vendor type!", "error");
       }
     }
 
@@ -370,7 +370,6 @@ const CreateVenderType = () => {
                           <label className="w-[200px] text-sm font-medium text-gray-700">
                             Sort Order
                           </label>
-
                           <input
                             type="number"
                             name="sort_order"

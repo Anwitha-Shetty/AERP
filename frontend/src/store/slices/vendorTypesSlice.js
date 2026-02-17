@@ -8,7 +8,9 @@ export const fetchVenderTypes = createAsyncThunk(
       const res = await api.get("/vendor/vendor_type/");
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Error fetching vendors");
+      return rejectWithValue(
+        err.response?.data || "Error fetching vendor types",
+      );
     }
   },
 );

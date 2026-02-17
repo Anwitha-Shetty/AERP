@@ -12,6 +12,8 @@ import CreateCompany from "./pages/admin/enterprisestructure/CreateCompany";
 import ViewCompany from "./pages/admin/enterprisestructure/ViewCompany";
 import ViewVenderTypes from "./pages/admin/vendors/ViewVenderTypes";
 import CreateVenderType from "./pages/admin/vendors/CreateVenderType";
+import CreateVendor from "./pages/admin/vendors/CreateVendor";
+import ViewVendors from "./pages/admin/vendors/ViewVendors";
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
           element={<CreateVenderType />}
         />
         <Route path="/admin/vendor-types/view" element={<ViewVenderTypes />} />
+        <Route path="/admin/vendor/create" element={<CreateVendor />} />
+        <Route path="/admin/vendors/view" element={<ViewVendors />} />
 
         {/* Materials */}
         <Route path="/admin/material-groups" element={<MaterialGroups />} />

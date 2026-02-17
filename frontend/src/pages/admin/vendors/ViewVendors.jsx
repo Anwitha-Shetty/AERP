@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
@@ -14,22 +14,32 @@ import {
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  fetchVenders,
+  updateVender,
+  deleteVender,
+  fetchVenderTypes,
+  fetchCurrencies,
+  fetchCountries,
+  fetchStates,
+  fetchCities,
   fetchUsers,
-  updateUser,
-  deleteUser,
   fetchCompanies,
-  fetchUserTypes,
-  fetchPositions,
-  fetchUserStatus,
-} from "../../../store/slices/userSlice";
-import { FaEye, FaEyeSlash, FaTimes, FaTrashAlt } from "react-icons/fa";
-import api from "../../../utils/api";
+} from "../../../store/slices/vendorSlice";
+import { FaTimes, FaTrashAlt } from "react-icons/fa";
 
-const ViewUsers = () => {
+const ViewVendors = () => {
   const dispatch = useDispatch();
-  const { users, companies, userTypes, positions, statuses } = useSelector(
-    (state) => state.users,
-  );
+  const {
+    vendortypes,
+    currencies,
+    countries,
+    states,
+    cities,
+    users,
+    companies,
+    vendors,
+    loading,
+  } = useSelector((state) => state.vendors);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,18 +47,18 @@ const ViewUsers = () => {
   const rowsPerPage = 7;
 
   useEffect(() => {
+    dispatch(fetchVenders());
+    dispatch(fetchVenderTypes());
+    dispatch(fetchCurrencies());
+    dispatch(fetchCountries());
+    dispatch(fetchStates());
+    dispatch(fetchCities());
     dispatch(fetchUsers());
     dispatch(fetchCompanies());
-    dispatch(fetchUserTypes());
-    dispatch(fetchPositions());
-    dispatch(fetchUserStatus());
   }, [dispatch]);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const photoRef = useRef(null);
-
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedVendors, setSelectedVendors] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -64,33 +74,37 @@ const ViewUsers = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedVendor, setSelectedVendor] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    username: "",
+    vendor_name: "",
+    vendor_code: "",
+    short_name: "",
+    vendor_type: "",
+    contact_person: "",
     email: "",
-    first_name: "",
-    last_name: "",
-    password: "",
+    phone: "",
+    mobile: "",
+    website: "",
+    billing_address: "",
+    shipping_address: "",
+    country: "",
+    state: "",
+    city: "",
+    postal_code: "",
+    currency: "",
+    default_lead_time_days: "",
+    minimum_order_value: "",
     is_active: "",
-    user_code: "",
-    user_photo: null,
-    user_company: "",
-    user_type: "",
-    position: "",
-    status: "",
-    manager: "",
-    phone_number: "",
-    emergency_contact: "",
-    relationship_emergency_contact: "",
+    is_blacklisted: "",
+    is_approved_by_cfo: "",
+    is_validated: "",
     remarks: "",
-  });
-
-  const [existingFiles, setExistingFiles] = useState({
-    user_photo: "",
+    creator: "",
+    company: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -128,10 +142,10 @@ const ViewUsers = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedUsers.length > 0) {
+      if (isBulkDelete && selectedVendors.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedUsers),
-          fullLabel: selectedUsers.join(", "),
+          label: formatIdsWithEllipsis(selectedVendors),
+          fullLabel: selectedVendors.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -169,8 +183,8 @@ const ViewUsers = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedUser?.id) {
-      updateBreadcrumbs("View", selectedUser.id);
+    } else if (showConfirm && selectedVendor?.id) {
+      updateBreadcrumbs("View", selectedVendor.id);
     } else {
       updateBreadcrumbs();
     }
@@ -179,9 +193,9 @@ const ViewUsers = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedUsers,
+    selectedVendors,
     editId,
-    selectedUser,
+    selectedVendor,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -202,46 +216,52 @@ const ViewUsers = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handlePhotoChange = () => {
-    const file = photoRef.current?.files?.[0];
-    if (!file) return;
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
-      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      photoRef.current.value = "";
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      user_photo: file,
-    }));
-  };
-
-  const handleOpenEdit = (user) => {
-    setEditId(user.id);
+  const handleOpenEdit = (vendor) => {
+    setEditId(vendor.id);
     setFormData({
-      username: user.username || "",
-      email: user.email || "",
-      first_name: user.first_name || "",
-      last_name: user.last_name || "",
-      password: "",
+      vendor_name: vendor.vendor_name || "",
+      vendor_code: vendor.vendor_code || "",
+      short_name: vendor.short_name || "",
+      vendor_type: vendor.vendor_type?.id || "",
+      contact_person: vendor.contact_person || "",
+      email: vendor.email || "",
+      phone: vendor.phone || "",
+      mobile: vendor.mobile || "",
+      website: vendor.website || "",
+      billing_address: vendor.billing_address || "",
+      shipping_address: vendor.shipping_address || "",
+      country: vendor.country?.id || "",
+      state: vendor.state?.id || "",
+      city: vendor.city?.id || "",
+      postal_code: vendor.postal_code || "",
+      currency: vendor.currency?.id || "",
+      default_lead_time_days: vendor.default_lead_time_days || "",
+      minimum_order_value: vendor.minimum_order_value || "",
       is_active:
-        user.is_active === null ? "" : user.is_active ? "true" : "false",
-      user_code: user.user_code || "",
-      user_photo: null,
-      user_company: user.user_company?.id || "",
-      user_type: user.user_type?.id || "",
-      position: user.position?.id || "",
-      status: user.status?.id || "",
-      manager: user.manager?.id || "",
-      phone_number: user.phone_number || "",
-      emergency_contact: user.emergency_contact || "",
-      relationship_emergency_contact: user.relationship_emergency_contact || "",
-      remarks: user.remarks || "",
+        vendor.is_active === null ? "" : vendor.is_active ? "true" : "false",
+      is_blacklisted:
+        vendor.is_blacklisted === null
+          ? ""
+          : vendor.is_blacklisted
+            ? "true"
+            : "false",
+      is_approved_by_cfo:
+        vendor.is_approved_by_cfo === null
+          ? ""
+          : vendor.is_approved_by_cfo
+            ? "true"
+            : "false",
+      is_validated:
+        vendor.is_validated === null
+          ? ""
+          : vendor.is_validated
+            ? "true"
+            : "false",
+      remarks: vendor.remarks || "",
+      creator: vendor.creator?.id || "",
+      company: vendor.company?.id || "",
     });
-    setExistingFiles({
-      user_photo: user.user_photo || "",
-    });
+
     setShowEditModal(true);
   };
 
@@ -251,14 +271,10 @@ const ViewUsers = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (key === "password") {
-        if (formData.password) {
-          data.append("password", formData.password);
-        }
-      } else if (key === "user_photo") {
-        if (formData.user_photo instanceof File) {
-          data.append("user_photo", formData.user_photo);
-        }
+      if (key === "billing_address") {
+        data.append("billing_address", formData.billing_address ?? null);
+      } else if (key === "shipping_address") {
+        data.append("shipping_address", formData.shipping_address ?? null);
       } else if (key === "remarks") {
         data.append("remarks", formData.remarks ?? null);
       } else {
@@ -269,17 +285,17 @@ const ViewUsers = () => {
     });
 
     if (
-      !formData.username ||
-      !formData.email ||
-      !formData.first_name ||
-      !formData.is_active ||
-      !formData.user_code ||
-      !formData.user_company ||
-      !formData.user_type ||
-      !formData.position ||
-      !formData.phone_number ||
-      !formData.emergency_contact ||
-      !formData.relationship_emergency_contact
+      !formData.vendor_name ||
+      !formData.vendor_code ||
+      !formData.short_name ||
+      !formData.vendor_type ||
+      !formData.currency ||
+      !formData.country ||
+      !formData.state ||
+      !formData.city ||
+      !formData.postal_code ||
+      !formData.creator ||
+      !formData.company
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -288,13 +304,13 @@ const ViewUsers = () => {
 
     try {
       const res = await dispatch(
-        updateUser({ id: editId, formData: data }),
+        updateVender({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("User updated successfully!", "success");
+        showTemporaryMessage("Vendor updated successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("User update accepted!", "success");
+        showTemporaryMessage("Vendor update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -328,7 +344,7 @@ const ViewUsers = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update user!", "error");
+        showTemporaryMessage("Failed to update vendor!", "error");
       }
     }
   };
@@ -338,26 +354,32 @@ const ViewUsers = () => {
     setEditId(null);
 
     setFormData({
-      username: "",
+      vendor_name: "",
+      vendor_code: "",
+      short_name: "",
+      vendor_type: "",
+      contact_person: "",
       email: "",
-      first_name: "",
-      last_name: "",
-      password: "",
+      phone: "",
+      mobile: "",
+      website: "",
+      billing_address: "",
+      shipping_address: "",
+      country: "",
+      state: "",
+      city: "",
+      postal_code: "",
+      currency: "",
+      default_lead_time_days: "",
+      minimum_order_value: "",
       is_active: "",
-      user_code: "",
-      user_photo: null,
-      user_company: "",
-      user_type: "",
-      position: "",
-      status: "",
-      manager: "",
-      phone_number: "",
-      emergency_contact: "",
-      relationship_emergency_contact: "",
+      is_blacklisted: "",
+      is_approved_by_cfo: "",
+      is_validated: "",
       remarks: "",
+      creator: "",
+      company: "",
     });
-
-    setExistingFiles({ user_photo: "" });
   };
 
   // ----------------- Delete handlers -----------------
@@ -368,32 +390,32 @@ const ViewUsers = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedUsers.length === 0) return;
+    if (selectedVendors.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedUsers.length > 0) {
+      if (isBulkDelete && selectedVendors.length > 0) {
         const res = await Promise.all(
-          selectedUsers.map((id) => dispatch(deleteUser(id)).unwrap()),
+          selectedVendors.map((id) => dispatch(deleteVender(id)).unwrap()),
         );
-        if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("User deleted successfully!", "success");
-        } else if (res.status === 202) {
-          showTemporaryMessage("User delete accepted!", "success");
+        if (res.every((r) => r.status === 200 || r.status === 201)) {
+          showTemporaryMessage("Vendor deleted successfully!", "success");
+        } else if (res.every((r) => r.status === 202)) {
+          showTemporaryMessage("Vendor delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedUsers([]);
+        setSelectedVendors([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteUser(deleteId)).unwrap();
+        const res = await dispatch(deleteVender(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("User deleted successfully!", "success");
+          showTemporaryMessage("Vendor deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("User delete accepted!", "success");
+          showTemporaryMessage("Vendor delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -429,32 +451,32 @@ const ViewUsers = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete user!", "error");
+        showTemporaryMessage("Failed to delete vendor!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredUsers = users.filter((user) => {
+  const filteredVendors = vendors.filter((vendor) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
     let activeText = "";
-    if (user?.is_active === true) activeText = "yes";
-    else if (user?.is_active === false) activeText = "no";
+    if (vendor?.is_active === true) activeText = "yes";
+    else if (vendor?.is_active === false) activeText = "no";
     return (
-      normalize(user?.username).includes(search) ||
-      normalize(user?.email).includes(search) ||
-      normalize(user?.phone_number).includes(search) ||
-      normalize(user?.manager?.username).includes(search) ||
+      normalize(vendor?.vendor_name).includes(search) ||
+      normalize(vendor?.short_name).includes(search) ||
+      normalize(vendor?.creator?.username).includes(search) ||
+      normalize(vendor?.company?.company_name).includes(search) ||
       normalize(activeText).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendors.length / rowsPerPage);
 
-  const paginatedUsers = filteredUsers.slice(
+  const paginatedVendors = filteredVendors.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -528,7 +550,7 @@ const ViewUsers = () => {
             {/* Left Section */}
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
-              <h1 className="text-lg font-bold text-gray-800">View Users</h1>
+              <h1 className="text-lg font-bold text-gray-800">View Vendors</h1>
             </div>
             {/* Right Section */}
             <div className="flex items-center gap-2">
@@ -545,20 +567,20 @@ const ViewUsers = () => {
               </div>
 
               <Link
-                to="/admin/users/create"
+                to="/admin/vendor/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create User
+                <FiPlus /> Create Vendor
               </Link>
 
-              {selectedUsers.length > 1 && (
+              {selectedVendors.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedUsers.length}
+                    {selectedVendors.length}
                   </span>
                 </button>
               )}
@@ -574,19 +596,19 @@ const ViewUsers = () => {
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {users.length <= 1 ? (
+                      {vendors.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            users.length > 1 &&
-                            selectedUsers.length === users.length
+                            vendors.length > 1 &&
+                            selectedVendors.length === vendors.length
                           }
                           onChange={(e) =>
-                            setSelectedUsers(
+                            setSelectedVendors(
                               e.target.checked
-                                ? users.map((user) => user.id)
+                                ? vendors.map((vendor) => vendor.id)
                                 : [],
                             )
                           }
@@ -595,10 +617,10 @@ const ViewUsers = () => {
                       )}
                     </th>
                     {[
-                      "USERNAME",
-                      "EMAIL ID",
-                      "MOBILE NO",
-                      "MANAGER",
+                      "NAME",
+                      "SHORT NAME",
+                      "CREATOR",
+                      "COMPANY",
                       "ACTIVE",
                       "ACTIONS",
                     ].map((label, idx) => (
@@ -613,57 +635,68 @@ const ViewUsers = () => {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-gray-800">
-                  {users.length > 0 ? (
-                    paginatedUsers.map((user) => (
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-2 py-2 text-center border border-gray-200 whitespace-nowrap"
+                      >
+                        <div className="flex justify-center items-center">
+                          <div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : vendors.length > 0 ? (
+                    paginatedVendors.map((vendor) => (
                       <tr
-                        key={user.id}
+                        key={vendor.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedUsers.includes(user.id)}
+                            checked={selectedVendors.includes(vendor.id)}
                             onChange={() =>
-                              setSelectedUsers((prev) =>
-                                prev.includes(user.id)
-                                  ? prev.filter((x) => x !== user.id)
-                                  : [...prev, user.id],
+                              setSelectedVendors((prev) =>
+                                prev.includes(vendor.id)
+                                  ? prev.filter((x) => x !== vendor.id)
+                                  : [...prev, vendor.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.username || "--"}
+                          {vendor?.vendor_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.email || "--"}
+                          {vendor?.short_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.phone_number || "--"}
+                          {vendor?.creator?.username || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.manager?.username || "--"}
+                          {vendor?.company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {user?.is_active == null ? (
+                          {vendor?.is_active == null ? (
                             "--"
                           ) : (
                             <span
                               className={
-                                user?.is_active
+                                vendor?.is_active
                                   ? "text-green-600"
                                   : "text-red-500"
                               }
                             >
-                              {user?.is_active ? "Yes" : "No"}
+                              {vendor?.is_active ? "Yes" : "No"}
                             </span>
                           )}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(user)}
+                              onClick={() => handleOpenEdit(vendor)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -671,8 +704,8 @@ const ViewUsers = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedUser(user);
-                                updateBreadcrumbs("View", user.id);
+                                setSelectedVendor(vendor);
+                                updateBreadcrumbs("View", vendor.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -681,7 +714,7 @@ const ViewUsers = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(user.id)}
+                              onClick={() => handleDelete(vendor.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -697,7 +730,7 @@ const ViewUsers = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
-                        No users found!
+                        No vendors found!
                       </td>
                     </tr>
                   )}
@@ -766,14 +799,14 @@ const ViewUsers = () => {
       </main>
 
       {/* Confirmation Modal */}
-      {showConfirm && selectedUser && (
+      {showConfirm && selectedVendor && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View User
+                  View Vendor
                 </h2>
               </div>
 
@@ -791,10 +824,42 @@ const ViewUsers = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Username:
+                      Vendor Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.username || "--"}
+                      {selectedVendor?.vendor_code || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Short Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.short_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Vendor Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.vendor_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Vendor Type:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.vendor_type?.name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Contact Person:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.contact_person || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -802,70 +867,42 @@ const ViewUsers = () => {
                       Email ID:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.email || "--"}
+                      {selectedVendor?.email || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      First Name:
+                      Phone:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.first_name || "--"}
+                      {selectedVendor?.phone || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Last Name:
+                      Mobile No:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.last_name || "--"}
+                      {selectedVendor?.mobile || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Active:
+                      Website:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.is_active == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedUser?.is_active
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedUser?.is_active ? "Yes" : "No"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Code:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_code || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Photo:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_photo ? (
+                      {selectedVendor?.website ? (
                         <a
                           href={
-                            selectedUser.user_photo.startsWith("http")
-                              ? selectedUser.user_photo
-                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedUser.user_photo}`
+                            selectedVendor.website.startsWith("http")
+                              ? selectedVendor.website
+                              : `https://${selectedVendor.website}`
                           }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-amber-400"
                         >
-                          {selectedUser.user_photo.split("/").pop()}
+                          {selectedVendor.website}
                         </a>
                       ) : (
                         "--"
@@ -874,66 +911,181 @@ const ViewUsers = () => {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
+                      Active:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.is_active == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendor?.is_active
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendor?.is_active ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Billing Address:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedVendor?.billing_address || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Shipping Address:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedVendor?.shipping_address || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Currency:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.currency?.currency_code || "--"} -{" "}
+                      {selectedVendor?.currency?.currency_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Country:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.country?.country_code || "--"} -{" "}
+                      {selectedVendor?.country?.country_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      State:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.state?.state_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      City:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.city?.city_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Postal Code:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.postal_code || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Lead Time:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.default_lead_time_days == null ? (
+                        "--"
+                      ) : (
+                        <>
+                          {selectedVendor.default_lead_time_days}{" "}
+                          {selectedVendor.default_lead_time_days > 1
+                            ? "days"
+                            : "day"}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Minimum Order Value:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.minimum_order_value || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Blacklisted:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.is_blacklisted == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendor?.is_blacklisted
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendor?.is_blacklisted ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Approved By CFO:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.is_approved_by_cfo == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendor?.is_approved_by_cfo
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendor?.is_approved_by_cfo ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Validated:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.is_validated == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendor?.is_validated
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendor?.is_validated ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Creator:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendor?.creator?.username || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_company?.company_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Type:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.user_type?.type || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Position:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.position?.position || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Status:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.status?.status || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Manager:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.manager?.username || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.phone_number || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Emergency Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.emergency_contact || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Relation Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedUser?.relationship_emergency_contact || "--"}
+                      {selectedVendor?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -941,7 +1093,7 @@ const ViewUsers = () => {
                       Remarks:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedUser?.remarks || "--"}
+                      {selectedVendor?.remarks || "--"}
                     </td>
                   </tr>
                 </tbody>
@@ -959,7 +1111,7 @@ const ViewUsers = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change User
+                  Change Vendor
                 </h2>
               </div>
               <button
@@ -973,80 +1125,120 @@ const ViewUsers = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Username <span className="text-red-500">*</span>
+                  Vendor Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="username"
-                  placeholder="Username"
-                  value={formData.username}
+                  name="vendor_code"
+                  placeholder="Enter Vendor Code"
+                  value={formData.vendor_code}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Password <span className="text-red-500">*</span>
+                  Short Name <span className="text-red-500">*</span>
                 </label>
-
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full form-input pr-10"
-                  />
-
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
-                  >
-                    {showPassword ? <FaEye /> : <FaEyeSlash />}
-                  </span>
-                </div>
+                <input
+                  type="text"
+                  name="short_name"
+                  placeholder="Enter Short Name"
+                  value={formData.short_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Email ID <span className="text-red-500">*</span>
+                  Vendor Name <span className="text-red-500">*</span>
                 </label>
+                <input
+                  type="text"
+                  name="vendor_name"
+                  placeholder="Enter Vendor Name"
+                  value={formData.vendor_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Vendor Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="vendor_type"
+                  value={formData.vendor_type}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select Vendor Type</option>
+                  {vendortypes.map((vt) => (
+                    <option key={vt.id} value={vt.id}>
+                      {vt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Contact Person</label>
+                <input
+                  type="text"
+                  name="contact_person"
+                  placeholder="Enter Contact Person"
+                  value={formData.contact_person}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Email ID</label>
                 <input
                   type="email"
                   name="email"
-                  placeholder="Email"
-                  className="form-input"
+                  placeholder="Enter Email ID"
                   value={formData.email}
                   onChange={handleChange}
+                  className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">
-                  First Name <span className="text-red-500">*</span>
-                </label>
+                <label className="form-label">Phone</label>
                 <input
                   type="text"
-                  name="first_name"
-                  placeholder="First Name"
-                  className="form-input"
-                  value={formData.first_name}
+                  name="phone"
+                  placeholder="Enter Phone"
+                  value={formData.phone}
                   onChange={handleChange}
+                  maxLength={10}
+                  className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Last Name</label>
+                <label className="form-label">Mobile No</label>
                 <input
                   type="text"
-                  name="last_name"
-                  placeholder="Enter Last Name"
-                  className="form-input"
-                  value={formData.last_name}
+                  name="mobile"
+                  placeholder="Enter Mobile No"
+                  value={formData.mobile}
                   onChange={handleChange}
+                  maxLength={10}
+                  className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">
-                  Active <span className="text-red-500">*</span>
-                </label>
+                <label className="form-label">Website</label>
+                <input
+                  type="url"
+                  name="website"
+                  placeholder="Enter Website URL"
+                  value={formData.website}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Active</label>
                 <select
                   name="is_active"
                   value={formData.is_active}
@@ -1059,106 +1251,206 @@ const ViewUsers = () => {
                 </select>
               </div>
               <div className="flex flex-col col-span-2">
-                <label className="form-label">Photo</label>
-                <input
-                  type="file"
-                  name="user_photo"
-                  accept="image/png, image/jpeg"
-                  ref={photoRef}
-                  onChange={handlePhotoChange}
-                  className="form-input"
-                />
-                {existingFiles.user_photo && (
-                  <a
-                    href={
-                      existingFiles.user_photo.startsWith("http")
-                        ? existingFiles.user_photo
-                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.user_photo}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-amber-400"
-                  >
-                    {existingFiles.user_photo.split("/").pop()}
-                  </a>
-                )}
+                <label className="form-label">Billing Address</label>
+                <textarea
+                  name="billing_address"
+                  value={formData.billing_address}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter billing address..."
+                ></textarea>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Shipping Address</label>
+                <textarea
+                  name="shipping_address"
+                  value={formData.shipping_address}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter shipping address..."
+                ></textarea>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Code <span className="text-red-500">*</span>
+                  Currency <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select Currency</option>
+                  {currencies.map((cr) => (
+                    <option key={cr.id} value={cr.id}>
+                      {cr.currency_code} - {cr.currency_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Country <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((ct) => (
+                    <option key={ct.id} value={ct.id}>
+                      {ct.country_code} - {ct.country_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select State</option>
+                  {states.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.state_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select City</option>
+                  {cities.map((cs) => (
+                    <option key={cs.id} value={cs.id}>
+                      {cs.city_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Postal Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="user_code"
-                  placeholder="Enter User Code"
-                  className="form-input"
-                  value={formData.user_code}
+                  name="postal_code"
+                  placeholder="Enter Postal Code"
+                  value={formData.postal_code}
                   onChange={handleChange}
+                  className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">
-                  Company <span className="text-red-500">*</span>
-                </label>
+                <label className="form-label">Lead Time</label>
+                <input
+                  type="number"
+                  name="default_lead_time_days"
+                  placeholder="eg. 1"
+                  value={formData.default_lead_time_days}
+                  min="0"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || /^\d+$/.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "-" || e.key === "e") {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Minimum Order Value</label>
+                <input
+                  type="number"
+                  name="minimum_order_value"
+                  placeholder="Enter Minimum Order Value"
+                  value={formData.minimum_order_value}
+                  min="0"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || /^\d+$/.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "-" || e.key === "e") {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Blacklisted</label>
                 <select
-                  name="user_company"
-                  value={formData.user_company}
+                  name="is_blacklisted"
+                  value={formData.is_blacklisted}
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select User Company</option>
-                  {companies.map((cp) => (
-                    <option key={cp.id} value={cp.id}>
-                      {cp.company_code} - {cp.company_name}
-                    </option>
-                  ))}
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Approved By CFO</label>
+                <select
+                  name="is_approved_by_cfo"
+                  value={formData.is_approved_by_cfo}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Validated</label>
+                <select
+                  name="is_validated"
+                  value={formData.is_validated}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
                 </select>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Type <span className="text-red-500">*</span>
+                  Creator <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="user_type"
-                  value={formData.user_type}
+                  name="creator"
+                  value={formData.creator}
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select User Type</option>
-                  {userTypes.map((ut) => (
-                    <option key={ut.id} value={ut.id}>
-                      {ut.type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Position <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="position"
-                  value={formData.position}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select Position</option>
-                  {positions.map((ps) => (
-                    <option key={ps.id} value={ps.id}>
-                      {ps.position}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Manager</label>
-                <select
-                  name="manager"
-                  value={formData.manager}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select Manager</option>
+                  <option value="">Select Creator</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username} - {user.email}
@@ -1168,58 +1460,18 @@ const ViewUsers = () => {
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Mobile No <span className="text-red-500">*</span>
+                  Company <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="phone_number"
-                  placeholder="Enter Mobile No"
-                  className="form-input"
-                  maxLength={10}
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Emergency Mobile No <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="emergency_contact"
-                  placeholder="Enter Emergency Contact"
-                  className="form-input"
-                  maxLength={10}
-                  value={formData.emergency_contact}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Relation Mobile No <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="relationship_emergency_contact"
-                  placeholder="Enter Relation Mobile No"
-                  className="form-input"
-                  maxLength={10}
-                  value={formData.relationship_emergency_contact}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Status</label>
                 <select
-                  name="status"
-                  value={formData.status}
+                  name="company"
+                  value={formData.company}
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Status</option>
-                  {statuses.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.status}
+                  <option value="">Select Company</option>
+                  {companies.map((cp) => (
+                    <option key={cp.id} value={cp.id}>
+                      {cp.company_code} - {cp.company_name}
                     </option>
                   ))}
                 </select>
@@ -1274,7 +1526,7 @@ const ViewUsers = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedUsers([]);
+                  if (isBulkDelete) setSelectedVendors([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -1290,4 +1542,4 @@ const ViewUsers = () => {
   );
 };
 
-export default ViewUsers;
+export default ViewVendors;

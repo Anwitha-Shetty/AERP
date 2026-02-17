@@ -80,6 +80,25 @@ const mainConfig = [
             ],
           },
           {
+            id: "vendorMenu",
+            label: "Vendors",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createVendorMenu",
+                label: "Create Vendor",
+                path: "/admin/vendor/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorsMenu",
+                label: "View Vendors",
+                path: "/admin/vendors/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
             id: "vendorOnboardingMenu",
             label: "Vendor Onboarding",
             path: "/admin/vendor-onboarding",

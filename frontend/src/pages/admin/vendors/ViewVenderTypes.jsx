@@ -24,16 +24,12 @@ import { FaTimes, FaTrashAlt } from "react-icons/fa";
 
 const ViewVenderTypes = () => {
   const dispatch = useDispatch();
-  const { users, companies, vendortypes } = useSelector(
+  const { users, companies, vendortypes, loading } = useSelector(
     (state) => state.vendortypes,
   );
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: "asc",
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 7;
 
@@ -337,9 +333,9 @@ const ViewVenderTypes = () => {
             dispatch(deleteVenderType(id)).unwrap(),
           ),
         );
-        if (res.status === 200 || res.status === 201) {
+        if (res.every((r) => r.status === 200 || r.status === 201)) {
           showTemporaryMessage("Vendor Type deleted successfully!", "success");
-        } else if (res.status === 202) {
+        } else if (res.every((r) => r.status === 202)) {
           showTemporaryMessage("Vendor Type delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
@@ -409,35 +405,10 @@ const ViewVenderTypes = () => {
     );
   });
 
-  // ---------------- SORT LOGIC ----------------
-  const sortedVendors = [...filteredVendors].sort((a, b) => {
-    if (!sortConfig.key) return 0;
-
-    let aValue = a[sortConfig.key];
-    let bValue = b[sortConfig.key];
-
-    if (sortConfig.key === "manager") {
-      aValue = a?.manager?.username || "";
-      bValue = b?.manager?.username || "";
-    }
-
-    if (aValue == null) aValue = "";
-    if (bValue == null) bValue = "";
-
-    if (typeof aValue === "string") {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
-
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
-
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(sortedVendors.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendors.length / rowsPerPage);
 
-  const paginatedVendors = sortedVendors.slice(
+  const paginatedVendors = filteredVendors.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -445,14 +416,6 @@ const ViewVenderTypes = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
-
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
 
   return (
     <div className="flex h-screen">
@@ -588,35 +551,36 @@ const ViewVenderTypes = () => {
                       )}
                     </th>
                     {[
-                      { label: "NAME", key: "name" },
-                      { label: "SHORT NAME", key: "short_name" },
-                      { label: "CREATOR", key: "creator" },
-                      { label: "COMPANY", key: "company" },
-                    ].map((head, idx) => (
+                      "NAME",
+                      "SHORT NAME",
+                      "CREATOR",
+                      "COMPANY",
+                      "ACTIVE",
+                      "ACTIONS",
+                    ].map((label, idx) => (
                       <th
                         key={idx}
-                        onClick={() => handleSort(head.key)}
-                        className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap cursor-pointer select-none"
+                        className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap"
                       >
-                        {head.label}
-                        {sortConfig.key === head.key && (
-                          <span className="ml-1">
-                            {sortConfig.direction === "asc" ? "▲" : "▼"}
-                          </span>
-                        )}
+                        {label}
                       </th>
                     ))}
-                    <th className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap">
-                      ACTIVE
-                    </th>
-                    <th className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap">
-                      ACTIONS
-                    </th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-gray-800">
-                  {vendortypes.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-2 py-2 text-center border border-gray-200 whitespace-nowrap"
+                      >
+                        <div className="flex justify-center items-center">
+                          <div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : vendortypes.length > 0 ? (
                     paginatedVendors.map((vendor) => (
                       <tr
                         key={vendor.id}

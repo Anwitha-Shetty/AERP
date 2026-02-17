@@ -46,10 +46,6 @@ const ViewCompany = () => {
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: "asc",
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 7;
 
@@ -463,35 +459,10 @@ const ViewCompany = () => {
     );
   });
 
-  // ---------------- SORT LOGIC ----------------
-  const sortedCompanies = [...filteredCompanies].sort((a, b) => {
-    if (!sortConfig.key) return 0;
-
-    let aValue = a[sortConfig.key];
-    let bValue = b[sortConfig.key];
-
-    if (sortConfig.key === "manager") {
-      aValue = a?.manager?.username || "";
-      bValue = b?.manager?.username || "";
-    }
-
-    if (aValue == null) aValue = "";
-    if (bValue == null) bValue = "";
-
-    if (typeof aValue === "string") {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
-
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
-
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(sortedCompanies.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredCompanies.length / rowsPerPage);
 
-  const paginatedCompanies = sortedCompanies.slice(
+  const paginatedCompanies = filteredCompanies.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -499,14 +470,6 @@ const ViewCompany = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
-
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
 
   return (
     <div className="flex h-screen">
@@ -642,28 +605,20 @@ const ViewCompany = () => {
                       )}
                     </th>
                     {[
-                      { label: "COMPANY NAME", key: "company_name" },
-                      { label: "PARENT COMPANY", key: "parent_company" },
-                      { label: "COMPANY ADMIN", key: "company_admin" },
-                      { label: "BUSINESS AREA", key: "business_area" },
-                      { label: "STATUS", key: "status" },
-                    ].map((head, idx) => (
+                      "COMPANY NAME",
+                      "PARENT COMPANY",
+                      "COMPANY ADMIN",
+                      "BUSINESS AREA",
+                      "STATUS",
+                      "ACTIONS",
+                    ].map((label, idx) => (
                       <th
                         key={idx}
-                        onClick={() => handleSort(head.key)}
-                        className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap cursor-pointer select-none"
+                        className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap"
                       >
-                        {head.label}
-                        {sortConfig.key === head.key && (
-                          <span className="ml-1">
-                            {sortConfig.direction === "asc" ? "▲" : "▼"}
-                          </span>
-                        )}
+                        {label}
                       </th>
                     ))}
-                    <th className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap">
-                      ACTIONS
-                    </th>
                   </tr>
                 </thead>
 
