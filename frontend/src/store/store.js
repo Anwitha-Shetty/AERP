@@ -5,6 +5,7 @@ import userReducer from "./slices/userSlice";
 import companyReducer from "./slices/companySlice";
 import vendorTypesReducer from "./slices/vendorTypesSlice";
 import vendorReducer from "./slices/vendorSlice";
+import vendorMaterialReducer from "./slices/vendorMaterialSlice";
 
 const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ const store = configureStore({
     companies: companyReducer,
     vendortypes: vendorTypesReducer,
     vendors: vendorReducer,
+    vendormaterials: vendorMaterialReducer,
   },
 });
 
