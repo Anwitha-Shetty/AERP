@@ -67,14 +67,33 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorTypeMenu",
-                label: "Create Vendor Type",
+                label: "Create Type",
                 path: "/admin/vendor-types/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorTypesMenu",
-                label: "View Vendor Types",
+                label: "View Types",
                 path: "/admin/vendor-types/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
+            id: "vendorKYCStatusMenu",
+            label: "Vendor KYC Status",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createVendorKYCStatusMenu",
+                label: "Create KYC Status",
+                path: "/admin/vendor-kyc-status/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorKYCStatusMenu",
+                label: "View KYC Status",
+                path: "/admin/vendor-kyc-status/view",
                 iconName: "FiUsers",
               },
             ],
@@ -99,24 +118,88 @@ const mainConfig = [
             ],
           },
           {
+            id: "vendorMaterialsMenu",
+            label: "Vendor Materials",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createVendorMaterialMenu",
+                label: "Create Material",
+                path: "/admin/vendor-material/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorMaterialsMenu",
+                label: "View Materials",
+                path: "/admin/vendor-materials/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
+            id: "vendorDeclarationsMenu",
+            label: "Vendor Declarations",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createVendorDeclarationMenu",
+                label: "Create Declaration",
+                path: "/admin/vendor-declaration/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorDeclarationsMenu",
+                label: "View Declarations",
+                path: "/admin/vendor-declarations/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
+            id: "vendorQuotationsMenu",
+            label: "Vendor Quotations",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createVendorQuotationMenu",
+                label: "Create Quotation",
+                path: "/admin/vendor-quotation/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorQuotationsMenu",
+                label: "View Quotations",
+                path: "/admin/vendor-quotations/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
+            id: "vendorKYCMenu",
+            label: "Vendor KYC",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createVendorKYCMenu",
+                label: "Create KYC",
+                path: "/admin/vendor-kyc/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewVendorKYCsMenu",
+                label: "View KYC",
+                path: "/admin/vendor-kyc/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
             id: "vendorMasterMenu",
             label: "Vendor Master",
             path: "/admin/vendor-master",
             iconName: "FiUsers",
           },
-          {
-            id: "vendorAgreementsMenu",
-            label: "Vendor Agreements",
-            path: "/admin/vendor-agreements",
-            iconName: "FiUsers",
-          },
         ],
-      },
-      {
-        id: "quotationsMenu",
-        label: "Quotations",
-        path: "/admin/quotations",
-        iconName: "FaFileSignature",
       },
       {
         id: "purchaseOrderGoodsReceiptMenu",

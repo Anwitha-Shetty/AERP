@@ -164,8 +164,8 @@ const AdminSidebar = () => {
         </button>
 
         <ul
-          className={`ml-8 space-y-[1px] text-sm transition-all duration-300 ease-in-out overflow-hidden transform origin-top ${
-            isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          className={`ml-8 space-y-[1px] text-sm transition-all duration-300 ease-in-out ${
+            isOpen ? "block" : "hidden"
           }`}
         >
           {menu.subMenu.map((sub) => renderMenu(sub, level + 1))}
