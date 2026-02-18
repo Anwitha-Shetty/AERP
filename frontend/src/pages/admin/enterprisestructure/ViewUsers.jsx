@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
+  FiArrowLeft,
+  FiArrowRight,
   FiEdit,
   FiEye,
   FiInfo,
@@ -27,9 +29,8 @@ import api from "../../../utils/api";
 
 const ViewUsers = () => {
   const dispatch = useDispatch();
-  const { users, companies, userTypes, positions, statuses } = useSelector(
-    (state) => state.users,
-  );
+  const { users, companies, userTypes, positions, statuses, loading } =
+    useSelector((state) => state.users);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -379,9 +380,9 @@ const ViewUsers = () => {
         const res = await Promise.all(
           selectedUsers.map((id) => dispatch(deleteUser(id)).unwrap()),
         );
-        if (res.status === 200 || res.status === 201) {
+        if (res.every((r) => r.status === 200 || r.status === 201)) {
           showTemporaryMessage("User deleted successfully!", "success");
-        } else if (res.status === 202) {
+        } else if (res.every((r) => r.status === 202)) {
           showTemporaryMessage("User delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
@@ -522,15 +523,13 @@ const ViewUsers = () => {
           </div>
         </div>
 
-        {/* Header */}
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
-            {/* Left Section */}
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
               <h1 className="text-lg font-bold text-gray-800">View Users</h1>
             </div>
-            {/* Right Section */}
+
             <div className="flex items-center gap-2">
               <div className="relative">
                 <FiSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
@@ -566,27 +565,26 @@ const ViewUsers = () => {
           </div>
         </div>
 
-        {/* TABLE */}
         <div className="bg-white rounded-md shadow-sm border border-gray-300 w-full">
           <div className="overflow-x-auto">
-            <div className="max-h-[270px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
+            <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <table className="min-w-full text-sm text-left divide-y divide-gray-200">
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {users.length <= 1 ? (
+                      {filteredUsers.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            users.length > 1 &&
-                            selectedUsers.length === users.length
+                            filteredUsers.length > 1 &&
+                            selectedUsers.length === filteredUsers.length
                           }
                           onChange={(e) =>
                             setSelectedUsers(
                               e.target.checked
-                                ? users.map((user) => user.id)
+                                ? filteredUsers.map((user) => user.id)
                                 : [],
                             )
                           }
@@ -613,7 +611,18 @@ const ViewUsers = () => {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-gray-800">
-                  {users.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-2 py-2 text-center border border-gray-200 whitespace-nowrap"
+                      >
+                        <div className="flex justify-center items-center">
+                          <div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length > 0 ? (
                     paginatedUsers.map((user) => (
                       <tr
                         key={user.id}
@@ -703,47 +712,52 @@ const ViewUsers = () => {
                   )}
                 </tbody>
               </table>
-
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={currentPage === 1}
-                    className="px-2 py-1 border rounded text-sm disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentPage(index + 1)}
-                      className={`px-2 py-1 border rounded text-sm ${
-                        currentPage === index + 1
-                          ? "bg-amber-400 text-black"
-                          : ""
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-2 py-1 border rounded text-sm disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full px-6">
+            <div className="flex justify-center items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-7 h-7 flex items-center justify-center border rounded text-sm 
+                   disabled:opacity-40 disabled:cursor-not-allowed 
+                   hover:bg-gray-100 cursor-pointer transition"
+              >
+                <FiArrowLeft size={16} />
+              </button>
+
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index + 1)}
+                  className={`w-7 h-7 flex items-center justify-center border rounded text-sm 
+            transition cursor-pointer ${
+              currentPage === index + 1
+                ? "bg-amber-400 text-black border-amber-400"
+                : "hover:bg-gray-100"
+            }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="w-7 h-7 flex items-center justify-center border rounded text-sm 
+                   disabled:opacity-40 disabled:cursor-not-allowed 
+                   hover:bg-gray-100 cursor-pointer transition"
+              >
+                <FiArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {message.text && (
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full px-6">
@@ -765,7 +779,6 @@ const ViewUsers = () => {
         )}
       </main>
 
-      {/* Confirmation Modal */}
       {showConfirm && selectedUser && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
@@ -951,7 +964,6 @@ const ViewUsers = () => {
         </div>
       )}
 
-      {/* EDIT Modal */}
       {showEditModal && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md">

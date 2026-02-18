@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
+  FiArrowLeft,
+  FiArrowRight,
   FiEdit,
   FiEye,
   FiInfo,
@@ -42,6 +44,7 @@ const ViewCompany = () => {
     languages,
     businessareas,
     businesssectors,
+    loading,
   } = useSelector((state) => state.companies);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
@@ -389,9 +392,9 @@ const ViewCompany = () => {
         const res = await Promise.all(
           selectedCompanies.map((id) => dispatch(deleteCompany(id)).unwrap()),
         );
-        if (res.status === 200 || res.status === 201) {
+        if (res.every((r) => r.status === 200 || r.status === 201)) {
           showTemporaryMessage("Company deleted successfully!", "success");
-        } else if (res.status === 202) {
+        } else if (res.every((r) => r.status === 202)) {
           showTemporaryMessage("Company delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
@@ -530,17 +533,15 @@ const ViewCompany = () => {
           </div>
         </div>
 
-        {/* Header */}
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
-            {/* Left Section */}
             <div className="flex items-center gap-2">
               <FaBuilding className="text-amber-400 text-lg" />
               <h1 className="text-lg font-bold text-gray-800">
                 View Companies
               </h1>
             </div>
-            {/* Right Section */}
+
             <div className="flex items-center gap-2">
               <div className="relative">
                 <FiSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
@@ -576,27 +577,27 @@ const ViewCompany = () => {
           </div>
         </div>
 
-        {/* TABLE */}
         <div className="bg-white rounded-md shadow-sm border border-gray-300 w-full">
           <div className="overflow-x-auto">
-            <div className="max-h-[270px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
+            <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <table className="min-w-full text-sm text-left divide-y divide-gray-200">
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {companies.length <= 1 ? (
+                      {filteredCompanies.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            companies.length > 1 &&
-                            selectedCompanies.length === companies.length
+                            filteredCompanies.length > 1 &&
+                            selectedCompanies.length ===
+                              filteredCompanies.length
                           }
                           onChange={(e) =>
                             setSelectedCompanies(
                               e.target.checked
-                                ? companies.map((company) => company.id)
+                                ? filteredCompanies.map((company) => company.id)
                                 : [],
                             )
                           }
@@ -623,7 +624,18 @@ const ViewCompany = () => {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-gray-800">
-                  {companies.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-2 py-2 text-center border border-gray-200 whitespace-nowrap"
+                      >
+                        <div className="flex justify-center items-center">
+                          <div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredCompanies.length > 0 ? (
                     paginatedCompanies.map((company) => (
                       <tr
                         key={company.id}
@@ -701,47 +713,52 @@ const ViewCompany = () => {
                   )}
                 </tbody>
               </table>
-
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={currentPage === 1}
-                    className="px-2 py-1 border rounded text-sm disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentPage(index + 1)}
-                      className={`px-2 py-1 border rounded text-sm ${
-                        currentPage === index + 1
-                          ? "bg-amber-400 text-black"
-                          : ""
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-2 py-1 border rounded text-sm disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full px-6">
+            <div className="flex justify-center items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-7 h-7 flex items-center justify-center border rounded text-sm 
+                   disabled:opacity-40 disabled:cursor-not-allowed 
+                   hover:bg-gray-100 cursor-pointer transition"
+              >
+                <FiArrowLeft size={16} />
+              </button>
+
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index + 1)}
+                  className={`w-7 h-7 flex items-center justify-center border rounded text-sm 
+            transition cursor-pointer ${
+              currentPage === index + 1
+                ? "bg-amber-400 text-black border-amber-400"
+                : "hover:bg-gray-100"
+            }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="w-7 h-7 flex items-center justify-center border rounded text-sm 
+                   disabled:opacity-40 disabled:cursor-not-allowed 
+                   hover:bg-gray-100 cursor-pointer transition"
+              >
+                <FiArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {message.text && (
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full px-6">
@@ -763,7 +780,6 @@ const ViewCompany = () => {
         )}
       </main>
 
-      {/* Confirmation Modal */}
       {showConfirm && selectedCompany && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
@@ -933,7 +949,6 @@ const ViewCompany = () => {
         </div>
       )}
 
-      {/* EDIT Modal */}
       {showEditModal && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md">

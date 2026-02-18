@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
+  FiArrowLeft,
+  FiArrowRight,
   FiEdit,
   FiEye,
   FiInfo,
@@ -389,7 +391,7 @@ const ViewVenderTypes = () => {
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredVendors = vendortypes.filter((vendor) => {
+  const filteredVendorTypes = vendortypes.filter((vendor) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
@@ -406,9 +408,9 @@ const ViewVenderTypes = () => {
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredVendors.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendorTypes.length / rowsPerPage);
 
-  const paginatedVendors = filteredVendors.slice(
+  const paginatedVendorTypes = filteredVendorTypes.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -525,24 +527,25 @@ const ViewVenderTypes = () => {
         {/* TABLE */}
         <div className="bg-white rounded-md shadow-sm border border-gray-300 w-full">
           <div className="overflow-x-auto">
-            <div className="max-h-[270px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
+            <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <table className="min-w-full text-sm text-left divide-y divide-gray-200">
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {vendortypes.length <= 1 ? (
+                      {filteredVendorTypes.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            vendortypes.length > 1 &&
-                            selectedVendorTypes.length === vendortypes.length
+                            filteredVendorTypes.length > 1 &&
+                            selectedVendorTypes.length ===
+                              filteredVendorTypes.length
                           }
                           onChange={(e) =>
                             setSelectedVendorTypes(
                               e.target.checked
-                                ? vendortypes.map((vendor) => vendor.id)
+                                ? filteredVendorTypes.map((vendor) => vendor.id)
                                 : [],
                             )
                           }
@@ -580,8 +583,8 @@ const ViewVenderTypes = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : vendortypes.length > 0 ? (
-                    paginatedVendors.map((vendor) => (
+                  ) : filteredVendorTypes.length > 0 ? (
+                    paginatedVendorTypes.map((vendor) => (
                       <tr
                         key={vendor.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
@@ -670,47 +673,52 @@ const ViewVenderTypes = () => {
                   )}
                 </tbody>
               </table>
-
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={currentPage === 1}
-                    className="px-2 py-1 border rounded text-sm disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentPage(index + 1)}
-                      className={`px-2 py-1 border rounded text-sm ${
-                        currentPage === index + 1
-                          ? "bg-amber-400 text-black"
-                          : ""
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-2 py-1 border rounded text-sm disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full px-6">
+            <div className="flex justify-center items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-7 h-7 flex items-center justify-center border rounded text-sm 
+                   disabled:opacity-40 disabled:cursor-not-allowed 
+                   hover:bg-gray-100 cursor-pointer transition"
+              >
+                <FiArrowLeft size={16} />
+              </button>
+
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index + 1)}
+                  className={`w-7 h-7 flex items-center justify-center border rounded text-sm 
+            transition cursor-pointer ${
+              currentPage === index + 1
+                ? "bg-amber-400 text-black border-amber-400"
+                : "hover:bg-gray-100"
+            }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="w-7 h-7 flex items-center justify-center border rounded text-sm 
+                   disabled:opacity-40 disabled:cursor-not-allowed 
+                   hover:bg-gray-100 cursor-pointer transition"
+              >
+                <FiArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {message.text && (
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full px-6">

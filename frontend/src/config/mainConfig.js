@@ -99,12 +99,6 @@ const mainConfig = [
             ],
           },
           {
-            id: "vendorOnboardingMenu",
-            label: "Vendor Onboarding",
-            path: "/admin/vendor-onboarding",
-            iconName: "FiUsers",
-          },
-          {
             id: "vendorMasterMenu",
             label: "Vendor Master",
             path: "/admin/vendor-master",

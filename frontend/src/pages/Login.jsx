@@ -187,7 +187,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-3 py-1.5 bg-amber-400 rounded-md h-8 cursor-pointer text-black transition"
+            className="px-3 py-1.5 bg-amber-400 rounded-full h-8 cursor-pointer text-black transition"
           >
             {loading ? "Login" : "Login"}
           </button>
