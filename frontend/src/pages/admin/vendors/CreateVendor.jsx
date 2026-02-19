@@ -229,11 +229,11 @@ const CreateVendor = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[325px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             {breadcrumbs.map((b, index) => (
@@ -355,7 +355,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Vendor Type</option>
+                            <option value="">Select</option>
                             {vendortypes.map((vt) => (
                               <option key={vt.id} value={vt.id}>
                                 {vt.name}
@@ -481,7 +481,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Currency</option>
+                            <option value="">Select</option>
                             {currencies.map((cr) => (
                               <option key={cr.id} value={cr.id}>
                                 {cr.currency_code} - {cr.currency_name}
@@ -499,7 +499,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Country</option>
+                            <option value="">Select</option>
                             {countries.map((ct) => (
                               <option key={ct.id} value={ct.id}>
                                 {ct.country_code} - {ct.country_name}
@@ -517,7 +517,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select State</option>
+                            <option value="">Select</option>
                             {states.map((st) => (
                               <option key={st.id} value={st.id}>
                                 {st.state_name}
@@ -535,7 +535,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select City</option>
+                            <option value="">Select</option>
                             {cities.map((cs) => (
                               <option key={cs.id} value={cs.id}>
                                 {cs.city_name}
@@ -659,7 +659,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Creator</option>
+                            <option value="">Select</option>
                             {users.map((user) => (
                               <option key={user.id} value={user.id}>
                                 {user.username} - {user.email}
@@ -677,7 +677,7 @@ const CreateVendor = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Company</option>
+                            <option value="">Select</option>
                             {companies.map((cp) => (
                               <option key={cp.id} value={cp.id}>
                                 {cp.company_code} - {cp.company_name}

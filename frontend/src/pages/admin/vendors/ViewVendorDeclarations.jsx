@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
@@ -16,33 +16,23 @@ import {
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  fetchVenderDeclarations,
+  updateVenderDeclaration,
+  deleteVenderDeclaration,
   fetchVenders,
-  updateVender,
-  deleteVender,
-  fetchVenderTypes,
-  fetchCurrencies,
-  fetchCountries,
-  fetchStates,
-  fetchCities,
   fetchUsers,
   fetchCompanies,
-} from "../../../store/slices/vendorSlice";
+} from "../../../store/slices/vendorDeclarationSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
+import api from "../../../utils/api";
 import dayjs from "dayjs";
 
-const ViewVendors = () => {
+const ViewVendorDeclarations = () => {
   const dispatch = useDispatch();
-  const {
-    vendortypes,
-    currencies,
-    countries,
-    states,
-    cities,
-    users,
-    companies,
-    vendors,
-    loading,
-  } = useSelector((state) => state.vendors);
+  const { vendors, users, companies, vendorDeclarations, loading } =
+    useSelector((state) => state.vendorDeclarations);
+
+  const signatureRef = useRef(null);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,18 +40,16 @@ const ViewVendors = () => {
   const rowsPerPage = 7;
 
   useEffect(() => {
+    dispatch(fetchVenderDeclarations());
     dispatch(fetchVenders());
-    dispatch(fetchVenderTypes());
-    dispatch(fetchCurrencies());
-    dispatch(fetchCountries());
-    dispatch(fetchStates());
-    dispatch(fetchCities());
     dispatch(fetchUsers());
     dispatch(fetchCompanies());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedVendors, setSelectedVendors] = useState([]);
+  const [selectedVendorDeclarations, setSelectedVendorDeclarations] = useState(
+    [],
+  );
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -77,37 +65,26 @@ const ViewVendors = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [selectedVendorDeclaration, setSelectedVendorDeclaration] =
+    useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    vendor_name: "",
-    vendor_code: "",
-    short_name: "",
-    vendor_type: "",
-    contact_person: "",
-    email: "",
-    phone: "",
-    mobile: "",
-    website: "",
-    billing_address: "",
-    shipping_address: "",
-    country: "",
-    state: "",
-    city: "",
-    postal_code: "",
-    currency: "",
-    default_lead_time_days: "",
-    minimum_order_value: "",
-    is_active: "",
-    is_blacklisted: "",
-    is_approved_by_cfo: "",
-    is_validated: "",
-    remarks: "",
+    vendor: "",
+    declared_by_name: "",
+    declared_by_designation: "",
+    place: "",
+    declaration_date: "",
+    signature: null,
+    accepted: "",
     creator: "",
     company: "",
+  });
+
+  const [existingFiles, setExistingFiles] = useState({
+    signature: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -145,10 +122,10 @@ const ViewVendors = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedVendors.length > 0) {
+      if (isBulkDelete && selectedVendorDeclarations.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedVendors),
-          fullLabel: selectedVendors.join(", "),
+          label: formatIdsWithEllipsis(selectedVendorDeclarations),
+          fullLabel: selectedVendorDeclarations.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -186,8 +163,8 @@ const ViewVendors = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedVendor?.id) {
-      updateBreadcrumbs("View", selectedVendor.id);
+    } else if (showConfirm && selectedVendorDeclaration?.id) {
+      updateBreadcrumbs("View", selectedVendorDeclaration.id);
     } else {
       updateBreadcrumbs();
     }
@@ -196,9 +173,9 @@ const ViewVendors = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedVendors,
+    selectedVendorDeclarations,
     editId,
-    selectedVendor,
+    selectedVendorDeclaration,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -219,50 +196,37 @@ const ViewVendors = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleSignatureChange = () => {
+    const file = signatureRef.current?.files?.[0];
+    if (!file) return;
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
+      signatureRef.current.value = "";
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      signature: file,
+    }));
+  };
+
   const handleOpenEdit = (vendor) => {
     setEditId(vendor.id);
     setFormData({
-      vendor_name: vendor.vendor_name || "",
-      vendor_code: vendor.vendor_code || "",
-      short_name: vendor.short_name || "",
-      vendor_type: vendor.vendor_type?.id || "",
-      contact_person: vendor.contact_person || "",
-      email: vendor.email || "",
-      phone: vendor.phone || "",
-      mobile: vendor.mobile || "",
-      website: vendor.website || "",
-      billing_address: vendor.billing_address || "",
-      shipping_address: vendor.shipping_address || "",
-      country: vendor.country?.id || "",
-      state: vendor.state?.id || "",
-      city: vendor.city?.id || "",
-      postal_code: vendor.postal_code || "",
-      currency: vendor.currency?.id || "",
-      default_lead_time_days: vendor.default_lead_time_days || "",
-      minimum_order_value: vendor.minimum_order_value || "",
-      is_active:
-        vendor.is_active === null ? "" : vendor.is_active ? "true" : "false",
-      is_blacklisted:
-        vendor.is_blacklisted === null
-          ? ""
-          : vendor.is_blacklisted
-            ? "true"
-            : "false",
-      is_approved_by_cfo:
-        vendor.is_approved_by_cfo === null
-          ? ""
-          : vendor.is_approved_by_cfo
-            ? "true"
-            : "false",
-      is_validated:
-        vendor.is_validated === null
-          ? ""
-          : vendor.is_validated
-            ? "true"
-            : "false",
-      remarks: vendor.remarks || "",
+      vendor: vendor.vendor?.id || "",
+      declared_by_name: vendor.declared_by_name || "",
+      declared_by_designation: vendor.declared_by_designation || "",
+      place: vendor.place || "",
+      declaration_date: vendor.declaration_date || "",
+      signature: null,
+      accepted:
+        vendor.accepted === null ? "" : vendor.accepted ? "true" : "false",
       creator: vendor.creator?.id || "",
       company: vendor.company?.id || "",
+    });
+    setExistingFiles({
+      signature: vendor.signature || "",
     });
 
     setShowEditModal(true);
@@ -274,12 +238,10 @@ const ViewVendors = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (key === "billing_address") {
-        data.append("billing_address", formData.billing_address ?? null);
-      } else if (key === "shipping_address") {
-        data.append("shipping_address", formData.shipping_address ?? null);
-      } else if (key === "remarks") {
-        data.append("remarks", formData.remarks ?? null);
+      if (key === "signature") {
+        if (formData.signature instanceof File) {
+          data.append("signature", formData.signature);
+        }
       } else {
         if (formData[key] !== undefined && formData[key] !== null) {
           data.append(key, formData[key]);
@@ -288,15 +250,11 @@ const ViewVendors = () => {
     });
 
     if (
-      !formData.vendor_name ||
-      !formData.vendor_code ||
-      !formData.short_name ||
-      !formData.vendor_type ||
-      !formData.currency ||
-      !formData.country ||
-      !formData.state ||
-      !formData.city ||
-      !formData.postal_code ||
+      !formData.vendor ||
+      !formData.declared_by_name ||
+      !formData.declared_by_designation ||
+      !formData.place ||
+      !formData.declaration_date ||
       !formData.creator ||
       !formData.company
     ) {
@@ -307,13 +265,16 @@ const ViewVendors = () => {
 
     try {
       const res = await dispatch(
-        updateVender({ id: editId, formData: data }),
+        updateVenderDeclaration({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Vendor updated successfully!", "success");
+        showTemporaryMessage(
+          "Vendor Declaration updated successfully!",
+          "success",
+        );
       } else if (res.status === 202) {
-        showTemporaryMessage("Vendor update accepted!", "success");
+        showTemporaryMessage("Vendor Declaration update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -347,7 +308,7 @@ const ViewVendors = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update vendor!", "error");
+        showTemporaryMessage("Failed to update vendor declaration!", "error");
       }
     }
   };
@@ -357,32 +318,17 @@ const ViewVendors = () => {
     setEditId(null);
 
     setFormData({
-      vendor_name: "",
-      vendor_code: "",
-      short_name: "",
-      vendor_type: "",
-      contact_person: "",
-      email: "",
-      phone: "",
-      mobile: "",
-      website: "",
-      billing_address: "",
-      shipping_address: "",
-      country: "",
-      state: "",
-      city: "",
-      postal_code: "",
-      currency: "",
-      default_lead_time_days: "",
-      minimum_order_value: "",
-      is_active: "",
-      is_blacklisted: "",
-      is_approved_by_cfo: "",
-      is_validated: "",
-      remarks: "",
+      vendor: "",
+      declared_by_name: "",
+      declared_by_designation: "",
+      place: "",
+      declaration_date: "",
+      signature: null,
+      accepted: "",
       creator: "",
       company: "",
     });
+    setExistingFiles({ signature: "" });
   };
 
   // ----------------- Delete handlers -----------------
@@ -393,32 +339,46 @@ const ViewVendors = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedVendors.length === 0) return;
+    if (selectedVendorDeclarations.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedVendors.length > 0) {
+      if (isBulkDelete && selectedVendorDeclarations.length > 0) {
         const res = await Promise.all(
-          selectedVendors.map((id) => dispatch(deleteVender(id)).unwrap()),
+          selectedVendorDeclarations.map((id) =>
+            dispatch(deleteVenderDeclaration(id)).unwrap(),
+          ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Vendor deleted successfully!", "success");
+          showTemporaryMessage(
+            "Vendor Declaration deleted successfully!",
+            "success",
+          );
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Vendor delete accepted!", "success");
+          showTemporaryMessage(
+            "Vendor Declaration delete accepted!",
+            "success",
+          );
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedVendors([]);
+        setSelectedVendorDeclarations([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteVender(deleteId)).unwrap();
+        const res = await dispatch(deleteVenderDeclaration(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Vendor deleted successfully!", "success");
+          showTemporaryMessage(
+            "Vendor Declaration deleted successfully!",
+            "success",
+          );
         } else if (res.status === 202) {
-          showTemporaryMessage("Vendor delete accepted!", "success");
+          showTemporaryMessage(
+            "Vendor Declaration delete accepted!",
+            "success",
+          );
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -454,13 +414,13 @@ const ViewVendors = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete vendor!", "error");
+        showTemporaryMessage("Failed to delete vendor declaration!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredVendors = vendors.filter((vendor) => {
+  const filteredVendorDeclarations = vendorDeclarations.filter((vendor) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
@@ -468,8 +428,12 @@ const ViewVendors = () => {
     if (vendor?.is_active === true) activeText = "yes";
     else if (vendor?.is_active === false) activeText = "no";
     return (
-      normalize(vendor?.vendor_name).includes(search) ||
-      normalize(vendor?.short_name).includes(search) ||
+      normalize(vendor?.vendor?.vendor_name).includes(search) ||
+      normalize(
+        vendor?.declaration_date
+          ? dayjs(vendor.declaration_date).format("DD-MM-YYYY")
+          : "--",
+      ).includes(search) ||
       normalize(vendor?.creator?.username).includes(search) ||
       normalize(vendor?.company?.company_name).includes(search) ||
       normalize(activeText).includes(search)
@@ -477,9 +441,9 @@ const ViewVendors = () => {
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredVendors.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendorDeclarations.length / rowsPerPage);
 
-  const paginatedVendors = filteredVendors.slice(
+  const paginatedVendorDeclarations = filteredVendorDeclarations.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -547,13 +511,17 @@ const ViewVendors = () => {
           </div>
         </div>
 
+        {/* Header */}
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
+            {/* Left Section */}
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
-              <h1 className="text-lg font-bold text-gray-800">View Vendors</h1>
+              <h1 className="text-lg font-bold text-gray-800">
+                View Vendor Declarations
+              </h1>
             </div>
-
+            {/* Right Section */}
             <div className="flex items-center gap-2">
               <div className="relative">
                 <FiSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
@@ -568,20 +536,20 @@ const ViewVendors = () => {
               </div>
 
               <Link
-                to="/admin/vendor/create"
+                to="/admin/vendor-declaration/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Vendor
+                <FiPlus /> Create Vendor Declaration
               </Link>
 
-              {selectedVendors.length > 1 && (
+              {selectedVendorDeclarations.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedVendors.length}
+                    {selectedVendorDeclarations.length}
                   </span>
                 </button>
               )}
@@ -589,6 +557,7 @@ const ViewVendors = () => {
           </div>
         </div>
 
+        {/* TABLE */}
         <div className="bg-white rounded-md shadow-sm border border-gray-300 w-full">
           <div className="overflow-x-auto">
             <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
@@ -596,19 +565,22 @@ const ViewVendors = () => {
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredVendors.length <= 1 ? (
+                      {filteredVendorDeclarations.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredVendors.length > 1 &&
-                            selectedVendors.length === filteredVendors.length
+                            filteredVendorDeclarations.length > 1 &&
+                            selectedVendorDeclarations.length ===
+                              filteredVendorDeclarations.length
                           }
                           onChange={(e) =>
-                            setSelectedVendors(
+                            setSelectedVendorDeclarations(
                               e.target.checked
-                                ? filteredVendors.map((vendor) => vendor.id)
+                                ? filteredVendorDeclarations.map(
+                                    (vendor) => vendor.id,
+                                  )
                                 : [],
                             )
                           }
@@ -617,11 +589,11 @@ const ViewVendors = () => {
                       )}
                     </th>
                     {[
-                      "NAME",
-                      "SHORT NAME",
+                      "VENDOR NAME",
+                      "DATE",
                       "CREATOR",
                       "COMPANY",
-                      "ACTIVE",
+                      "ACCEPTED",
                       "ACTIONS",
                     ].map((label, idx) => (
                       <th
@@ -646,8 +618,8 @@ const ViewVendors = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredVendors.length > 0 ? (
-                    paginatedVendors.map((vendor) => (
+                  ) : filteredVendorDeclarations.length > 0 ? (
+                    paginatedVendorDeclarations.map((vendor) => (
                       <tr
                         key={vendor.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
@@ -655,9 +627,11 @@ const ViewVendors = () => {
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedVendors.includes(vendor.id)}
+                            checked={selectedVendorDeclarations.includes(
+                              vendor.id,
+                            )}
                             onChange={() =>
-                              setSelectedVendors((prev) =>
+                              setSelectedVendorDeclarations((prev) =>
                                 prev.includes(vendor.id)
                                   ? prev.filter((x) => x !== vendor.id)
                                   : [...prev, vendor.id],
@@ -667,10 +641,14 @@ const ViewVendors = () => {
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.vendor_name || "--"}
+                          {vendor?.vendor?.vendor_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.short_name || "--"}
+                          {vendor?.declaration_date
+                            ? dayjs(vendor.declaration_date).format(
+                                "DD-MM-YYYY",
+                              )
+                            : "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           {vendor?.creator?.username || "--"}
@@ -679,17 +657,17 @@ const ViewVendors = () => {
                           {vendor?.company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.is_active == null ? (
+                          {vendor?.accepted == null ? (
                             "--"
                           ) : (
                             <span
                               className={
-                                vendor?.is_active
+                                vendor?.accepted
                                   ? "text-green-600"
                                   : "text-red-500"
                               }
                             >
-                              {vendor?.is_active ? "Yes" : "No"}
+                              {vendor?.accepted ? "Yes" : "No"}
                             </span>
                           )}
                         </td>
@@ -704,7 +682,7 @@ const ViewVendors = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedVendor(vendor);
+                                setSelectedVendorDeclaration(vendor);
                                 updateBreadcrumbs("View", vendor.id);
                                 setShowConfirm(true);
                               }}
@@ -728,9 +706,9 @@ const ViewVendors = () => {
                     <tr>
                       <td
                         colSpan={7}
-                        className="px-2 py-2 text-center text-gray-400 border border-gray-200"
+                        className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
-                        No vendors found!
+                        No vendor materials found!
                       </td>
                     </tr>
                   )}
@@ -803,14 +781,15 @@ const ViewVendors = () => {
         )}
       </main>
 
-      {showConfirm && selectedVendor && (
+      {/* Confirmation Modal */}
+      {showConfirm && selectedVendorDeclaration && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Vendor
+                  View Vendor Declaration
                 </h2>
               </div>
 
@@ -828,250 +807,28 @@ const ViewVendors = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Vendor Code:
+                      Vendor:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.vendor_code || "--"}
+                      {selectedVendorDeclaration?.vendor?.vendor_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Short Name:
+                      Accepted:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.short_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Vendor Name:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.vendor_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Vendor Type:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.vendor_type?.name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Contact Person:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.contact_person || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Email ID:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.email || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Phone:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.phone || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Mobile No:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.mobile || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Website:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.website ? (
-                        <a
-                          href={
-                            selectedVendor.website.startsWith("http")
-                              ? selectedVendor.website
-                              : `https://${selectedVendor.website}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-amber-400"
-                        >
-                          {selectedVendor.website}
-                        </a>
-                      ) : (
-                        "--"
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Active:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.is_active == null ? (
+                      {selectedVendorDeclaration?.accepted == null ? (
                         "--"
                       ) : (
                         <span
                           className={
-                            selectedVendor?.is_active
+                            selectedVendorDeclaration?.accepted
                               ? "text-green-600"
                               : "text-red-500"
                           }
                         >
-                          {selectedVendor?.is_active ? "Yes" : "No"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left align-top">
-                      Billing Address:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedVendor?.billing_address || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left align-top">
-                      Shipping Address:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedVendor?.shipping_address || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.currency?.currency_code || "--"} -{" "}
-                      {selectedVendor?.currency?.currency_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Country:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.country?.country_code || "--"} -{" "}
-                      {selectedVendor?.country?.country_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      State:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.state?.state_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      City:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.city?.city_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Postal Code:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.postal_code || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Lead Time:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.default_lead_time_days == null ? (
-                        "--"
-                      ) : (
-                        <>
-                          {selectedVendor.default_lead_time_days}{" "}
-                          {selectedVendor.default_lead_time_days > 1
-                            ? "days"
-                            : "day"}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Minimum Order Value:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.minimum_order_value || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Blacklisted:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.is_blacklisted == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedVendor?.is_blacklisted
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedVendor?.is_blacklisted ? "Yes" : "No"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Approved By CFO:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.is_approved_by_cfo == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedVendor?.is_approved_by_cfo
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedVendor?.is_approved_by_cfo ? "Yes" : "No"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Validated:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.is_validated == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedVendor?.is_validated
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedVendor?.is_validated ? "Yes" : "No"}
+                          {selectedVendorDeclaration?.accepted ? "Yes" : "No"}
                         </span>
                       )}
                     </td>
@@ -1081,7 +838,7 @@ const ViewVendors = () => {
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.creator?.username || "--"}
+                      {selectedVendorDeclaration?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -1089,15 +846,7 @@ const ViewVendors = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.company?.company_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left align-top">
-                      Remarks:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedVendor?.remarks || "--"}
+                      {selectedVendorDeclaration?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -1105,8 +854,8 @@ const ViewVendors = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.created_at
-                        ? dayjs(selectedVendor?.created_at).format(
+                      {selectedVendorDeclaration?.created_at
+                        ? dayjs(selectedVendorDeclaration?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -1117,8 +866,8 @@ const ViewVendors = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendor?.updated_at
-                        ? dayjs(selectedVendor?.updated_at).format(
+                      {selectedVendorDeclaration?.updated_at
+                        ? dayjs(selectedVendorDeclaration?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -1131,6 +880,7 @@ const ViewVendors = () => {
         </div>
       )}
 
+      {/* EDIT Modal */}
       {showEditModal && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md">
@@ -1138,7 +888,7 @@ const ViewVendors = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Vendor
+                  Change Vendor Declaration
                 </h2>
               </div>
               <button
@@ -1152,123 +902,78 @@ const ViewVendors = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Vendor Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="vendor_code"
-                  placeholder="Enter Vendor Code"
-                  value={formData.vendor_code}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Short Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="short_name"
-                  placeholder="Enter Short Name"
-                  value={formData.short_name}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Vendor Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="vendor_name"
-                  placeholder="Enter Vendor Name"
-                  value={formData.vendor_name}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Vendor Type <span className="text-red-500">*</span>
+                  Vendor <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="vendor_type"
-                  value={formData.vendor_type}
+                  name="vendor"
+                  value={formData.vendor}
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Vendor Type</option>
-                  {vendortypes.map((vt) => (
-                    <option key={vt.id} value={vt.id}>
-                      {vt.name}
+                  <option value="">Select</option>
+                  {vendors.map((vs) => (
+                    <option key={vs.id} value={vs.id}>
+                      {vs.vendor_name}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Contact Person</label>
+                <label className="form-label">
+                  Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  name="contact_person"
-                  placeholder="Enter Contact Person"
-                  value={formData.contact_person}
+                  name="declared_by_name"
+                  placeholder="Enter Name"
+                  value={formData.declared_by_name}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Email ID</label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Enter Email ID"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Phone</label>
+                <label className="form-label">
+                  Designation <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  name="phone"
-                  placeholder="Enter Phone"
-                  value={formData.phone}
+                  name="declared_by_designation"
+                  placeholder="Enter Designation"
+                  value={formData.declared_by_designation}
                   onChange={handleChange}
-                  maxLength={10}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Mobile No</label>
+                <label className="form-label">
+                  Place <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  name="mobile"
-                  placeholder="Enter Mobile No"
-                  value={formData.mobile}
+                  name="place"
+                  placeholder="Enter Place"
+                  value={formData.place}
                   onChange={handleChange}
-                  maxLength={10}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Website</label>
+                <label className="form-label">
+                  Date <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="url"
-                  name="website"
-                  placeholder="Enter Website URL"
-                  value={formData.website}
+                  type="date"
+                  name="declaration_date"
+                  value={formData.declaration_date}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Active</label>
+                <label className="form-label">Accepted</label>
                 <select
-                  name="is_active"
-                  value={formData.is_active}
+                  name="accepted"
+                  value={formData.accepted}
                   onChange={handleChange}
                   className="form-input"
                 >
@@ -1278,194 +983,29 @@ const ViewVendors = () => {
                 </select>
               </div>
               <div className="flex flex-col col-span-2">
-                <label className="form-label">Billing Address</label>
-                <textarea
-                  name="billing_address"
-                  value={formData.billing_address}
-                  onChange={handleChange}
-                  rows={2}
-                  className="textarea-input"
-                  placeholder="Enter billing address..."
-                ></textarea>
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">Shipping Address</label>
-                <textarea
-                  name="shipping_address"
-                  value={formData.shipping_address}
-                  onChange={handleChange}
-                  rows={2}
-                  className="textarea-input"
-                  placeholder="Enter shipping address..."
-                ></textarea>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Currency <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {currencies.map((cr) => (
-                    <option key={cr.id} value={cr.id}>
-                      {cr.currency_code} - {cr.currency_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Country <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {countries.map((ct) => (
-                    <option key={ct.id} value={ct.id}>
-                      {ct.country_code} - {ct.country_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  State <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {states.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.state_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {cities.map((cs) => (
-                    <option key={cs.id} value={cs.id}>
-                      {cs.city_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Postal Code <span className="text-red-500">*</span>
-                </label>
+                <label className="form-label">Signature</label>
                 <input
-                  type="text"
-                  name="postal_code"
-                  placeholder="Enter Postal Code"
-                  value={formData.postal_code}
-                  onChange={handleChange}
+                  type="file"
+                  name="signature"
+                  accept="image/png, image/jpeg"
+                  ref={signatureRef}
+                  onChange={handleSignatureChange}
                   className="form-input"
                 />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Lead Time</label>
-                <input
-                  type="number"
-                  name="default_lead_time_days"
-                  placeholder="eg. 1"
-                  value={formData.default_lead_time_days}
-                  min="0"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || /^\d+$/.test(value)) {
-                      handleChange(e);
+                {existingFiles.signature && (
+                  <a
+                    href={
+                      existingFiles.signature.startsWith("http")
+                        ? existingFiles.signature
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.signature}`
                     }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e") {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Minimum Order Value</label>
-                <input
-                  type="number"
-                  name="minimum_order_value"
-                  placeholder="Enter Minimum Order Value"
-                  value={formData.minimum_order_value}
-                  min="0"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || /^\d+$/.test(value)) {
-                      handleChange(e);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e") {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Blacklisted</label>
-                <select
-                  name="is_blacklisted"
-                  value={formData.is_blacklisted}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Approved By CFO</label>
-                <select
-                  name="is_approved_by_cfo"
-                  value={formData.is_approved_by_cfo}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Validated</label>
-                <select
-                  name="is_validated"
-                  value={formData.is_validated}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400"
+                  >
+                    {existingFiles.signature.split("/").pop()}
+                  </a>
+                )}
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
@@ -1502,17 +1042,6 @@ const ViewVendors = () => {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">Remarks</label>
-                <textarea
-                  name="remarks"
-                  value={formData.remarks}
-                  onChange={handleChange}
-                  rows={2}
-                  className="textarea-input"
-                  placeholder="Enter remarks..."
-                ></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
@@ -1553,7 +1082,7 @@ const ViewVendors = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedVendors([]);
+                  if (isBulkDelete) setSelectedVendorDeclarations([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -1569,4 +1098,4 @@ const ViewVendors = () => {
   );
 };
 
-export default ViewVendors;
+export default ViewVendorDeclarations;

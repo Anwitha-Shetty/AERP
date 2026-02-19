@@ -16,6 +16,8 @@ import CreateVendor from "./pages/admin/vendors/CreateVendor";
 import ViewVendors from "./pages/admin/vendors/ViewVendors";
 import CreateVendorMaterial from "./pages/admin/vendors/CreateVendorMaterial";
 import ViewVendorMaterials from "./pages/admin/vendors/ViewVendorMaterials";
+import CreateVendorDeclaration from "./pages/admin/vendors/CreateVendorDeclaration";
+import ViewVendorDeclarations from "./pages/admin/vendors/ViewVendorDeclarations";
 
 function App() {
   return (
@@ -46,6 +48,14 @@ function App() {
         <Route
           path="/admin/vendor-materials/view"
           element={<ViewVendorMaterials />}
+        />
+        <Route
+          path="/admin/vendor-declaration/create"
+          element={<CreateVendorDeclaration />}
+        />
+        <Route
+          path="/admin/vendor-declarations/view"
+          element={<ViewVendorDeclarations />}
         />
 
         {/* Materials */}

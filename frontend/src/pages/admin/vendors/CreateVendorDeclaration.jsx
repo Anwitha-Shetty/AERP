@@ -1,19 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminSidebar from "../../../components/AdminSidebar";
 import { useLocation, useNavigate } from "react-router-dom";
 import mainConfig from "../../../config/mainConfig";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import { FiInfo, FiSave, FiUsers } from "react-icons/fi";
 import {
-  createVenderType,
+  createVenderDeclaration,
+  fetchVenders,
   fetchUsers,
   fetchCompanies,
-} from "../../../store/slices/vendorTypesSlice";
+} from "../../../store/slices/vendorDeclarationSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-const CreateVenderType = () => {
+const CreateVendorDeclaration = () => {
   const dispatch = useDispatch();
-  const { users, companies } = useSelector((state) => state.vendortypes);
+  const { vendors, users, companies } = useSelector(
+    (state) => state.vendorDeclarations,
+  );
+
+  const signatureRef = useRef(null);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [actionType, setActionType] = useState("");
@@ -28,20 +33,19 @@ const CreateVenderType = () => {
   };
 
   const [formData, setFormData] = useState({
-    name: "",
-    code: "",
-    short_name: "",
-    description: "",
-    is_service_provider: "",
-    is_material_supplier: "",
-    requires_contract: "",
-    is_active: "",
-    sort_order: "",
+    vendor: "",
+    declared_by_name: "",
+    declared_by_designation: "",
+    place: "",
+    declaration_date: "",
+    signature: null,
+    accepted: "",
     creator: "",
     company: "",
   });
 
   useEffect(() => {
+    dispatch(fetchVenders());
     dispatch(fetchUsers());
     dispatch(fetchCompanies());
   }, [dispatch]);
@@ -95,14 +99,29 @@ const CreateVenderType = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleSignatureChange = () => {
+    const file = signatureRef.current?.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+
+    if (!allowedTypes.includes(file.type)) {
+      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
+      signatureRef.current.value = "";
+      return;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionType("Save");
 
     if (
-      !formData.name ||
-      !formData.short_name ||
-      !formData.code ||
+      !formData.vendor ||
+      !formData.declared_by_name ||
+      !formData.declared_by_designation ||
+      !formData.place ||
+      !formData.declaration_date ||
       !formData.creator ||
       !formData.company
     ) {
@@ -113,37 +132,76 @@ const CreateVenderType = () => {
 
     const submitData = new FormData();
 
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] !== null && formData[key] !== undefined) {
-        submitData.append(key, formData[key]);
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null && value !== "") {
+        submitData.append(key, value);
       }
     });
 
+    const file = signatureRef.current?.files?.[0];
+    if (file) {
+      submitData.append("signature", file);
+    }
+
     try {
-      const res = await dispatch(createVenderType(submitData)).unwrap();
+      const res = await dispatch(createVenderDeclaration(submitData)).unwrap();
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Vendor Type created successfully!", "success");
+        showTemporaryMessage(
+          "Vendor Declaration created successfully!",
+          "success",
+        );
       } else if (res.status === 202) {
-        showTemporaryMessage("Vendor Type create accepted!", "success");
+        showTemporaryMessage("Vendor Declaration create accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
       }
       setFormData({
-        name: "",
-        code: "",
-        short_name: "",
-        description: "",
-        is_service_provider: "",
-        is_material_supplier: "",
-        requires_contract: "",
-        is_active: "",
-        sort_order: "",
+        vendor: "",
+        declared_by_name: "",
+        declared_by_designation: "",
+        place: "",
+        declaration_date: "",
+        signature: null,
+        accepted: "",
         creator: "",
         company: "",
       });
+      if (signatureRef.current) {
+        signatureRef.current.value = "";
+      }
     } catch (error) {
       console.log("Error:", error);
+
+      /* ================= HANDLE DUPLICATE VENDOR ================= */
+      const backendErrorString =
+        error?.data?.error || JSON.stringify(error?.data || "");
+
+      if (
+        typeof backendErrorString === "string" &&
+        backendErrorString.toLowerCase().includes("already exists")
+      ) {
+        showTemporaryMessage(
+          "Vendor declaration for this vendor already exists!",
+          "error",
+        );
+        setFormData({
+          vendor: "",
+          declared_by_name: "",
+          declared_by_designation: "",
+          place: "",
+          declaration_date: "",
+          signature: null,
+          accepted: "",
+          creator: "",
+          company: "",
+        });
+        if (signatureRef.current) {
+          signatureRef.current.value = "";
+        }
+        setTimeout(() => setActionType(""), 3000);
+        return;
+      }
 
       let errorMessages = [];
 
@@ -168,7 +226,7 @@ const CreateVenderType = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to create vendor type!", "error");
+        showTemporaryMessage("Failed to create vendor declaration!", "error");
       }
     }
 
@@ -240,7 +298,7 @@ const CreateVenderType = () => {
                       <div className="flex items-center gap-2 mt-4 pb-1">
                         <FiUsers className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create Vendor Type
+                          Create Vendor Declaration
                         </h2>
                       </div>
 
@@ -256,137 +314,98 @@ const CreateVenderType = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Code <span className="text-red-500">*</span>
+                            Vendor <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="code"
-                            placeholder="Enter Code"
-                            value={formData.code}
+                          <select
+                            name="vendor"
+                            value={formData.vendor}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
-                          />
+                          >
+                            <option value="">Select</option>
+                            {vendors.map((vs) => (
+                              <option key={vs.id} value={vs.id}>
+                                {vs.vendor_name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Short Name <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="short_name"
-                            placeholder="Enter Short Name"
-                            value={formData.short_name}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center col-span-2">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
                             Name <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="name"
+                            name="declared_by_name"
                             placeholder="Enter Name"
-                            value={formData.name}
+                            value={formData.declared_by_name}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
-                        <div className="flex items-start col-span-2">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Description
-                          </label>
-                          <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={2}
-                            className="flex-1 w-full textarea-input"
-                            placeholder="Enter description..."
-                          ></textarea>
-                        </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Service Provider
-                          </label>
-                          <select
-                            name="is_service_provider"
-                            value={formData.is_service_provider}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Material Supplier
-                          </label>
-                          <select
-                            name="is_material_supplier"
-                            value={formData.is_material_supplier}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Requires Contract
-                          </label>
-                          <select
-                            name="requires_contract"
-                            value={formData.requires_contract}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Active
-                          </label>
-                          <select
-                            name="is_active"
-                            value={formData.is_active}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Sort Order
+                            Designation <span className="text-red-500">*</span>
                           </label>
                           <input
-                            type="number"
-                            name="sort_order"
-                            placeholder="Enter Sort Order"
-                            value={formData.sort_order}
-                            min="0"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === "" || /^\d+$/.test(value)) {
-                                handleChange(e);
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "-" || e.key === "e") {
-                                e.preventDefault();
-                              }
-                            }}
+                            type="text"
+                            name="declared_by_designation"
+                            placeholder="Enter Designation"
+                            value={formData.declared_by_designation}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Place <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="place"
+                            placeholder="Enter Place"
+                            value={formData.place}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            name="declaration_date"
+                            value={formData.declaration_date}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Accepted
+                          </label>
+                          <select
+                            name="accepted"
+                            value={formData.accepted}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Signature <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="file"
+                            name="signature"
+                            accept="image/png, image/jpeg"
+                            ref={signatureRef}
+                            onChange={handleSignatureChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
@@ -458,4 +477,4 @@ const CreateVenderType = () => {
   );
 };
 
-export default CreateVenderType;
+export default CreateVendorDeclaration;

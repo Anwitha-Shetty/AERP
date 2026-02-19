@@ -30,6 +30,7 @@ import {
 } from "../../../store/slices/companySlice";
 import { FaBuilding, FaTimes, FaTrashAlt } from "react-icons/fa";
 import api from "../../../utils/api";
+import dayjs from "dayjs";
 
 const ViewCompany = () => {
   const dispatch = useDispatch();
@@ -476,11 +477,11 @@ const ViewCompany = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[325px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -942,6 +943,30 @@ const ViewCompany = () => {
                       {selectedCompany?.status?.status || "--"}
                     </td>
                   </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Created At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.created_at
+                        ? dayjs(selectedCompany?.created_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Updated At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCompany?.updated_at
+                        ? dayjs(selectedCompany?.updated_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -1053,7 +1078,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Parent Company</option>
+                  <option value="">Select</option>
                   {companies.map((cp) => (
                     <option key={cp.id} value={cp.id}>
                       {cp.company_code} - {cp.company_name}
@@ -1071,7 +1096,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Company Admin</option>
+                  <option value="">Select</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username} - {user.email}
@@ -1089,7 +1114,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Currency</option>
+                  <option value="">Select</option>
                   {currencies.map((cr) => (
                     <option key={cr.id} value={cr.id}>
                       {cr.currency_code} - {cr.currency_name}
@@ -1107,7 +1132,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Country</option>
+                  <option value="">Select</option>
                   {countries.map((ct) => (
                     <option key={ct.id} value={ct.id}>
                       {ct.country_code} - {ct.country_name}
@@ -1125,7 +1150,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select State</option>
+                  <option value="">Select</option>
                   {states.map((st) => (
                     <option key={st.id} value={st.id}>
                       {st.state_name}
@@ -1143,7 +1168,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select City</option>
+                  <option value="">Select</option>
                   {cities.map((cs) => (
                     <option key={cs.id} value={cs.id}>
                       {cs.city_name}
@@ -1161,7 +1186,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Language</option>
+                  <option value="">Select</option>
                   {languages.map((lg) => (
                     <option key={lg.id} value={lg.id}>
                       {lg.language_name}
@@ -1179,7 +1204,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Business Area</option>
+                  <option value="">Select</option>
                   {businessareas.map((ba) => (
                     <option key={ba.id} value={ba.id}>
                       {ba.business_area}
@@ -1197,7 +1222,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Business Sector</option>
+                  <option value="">Select</option>
                   {businesssectors.map((bs) => (
                     <option key={bs.id} value={bs.id}>
                       {bs.business_sector}
@@ -1213,7 +1238,7 @@ const ViewCompany = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Status</option>
+                  <option value="">Select</option>
                   {statuses.map((st) => (
                     <option key={st.id} value={st.id}>
                       {st.status}

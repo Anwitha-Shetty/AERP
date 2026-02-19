@@ -23,6 +23,7 @@ import {
   fetchCompanies,
 } from "../../../store/slices/vendorTypesSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
+import dayjs from "dayjs";
 
 const ViewVenderTypes = () => {
   const dispatch = useDispatch();
@@ -421,11 +422,11 @@ const ViewVenderTypes = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[325px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -904,6 +905,30 @@ const ViewVenderTypes = () => {
                       {selectedVendorType?.company?.company_name || "--"}
                     </td>
                   </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Created At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.created_at
+                        ? dayjs(selectedVendorType?.created_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Updated At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorType?.updated_at
+                        ? dayjs(selectedVendorType?.updated_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -1066,7 +1091,7 @@ const ViewVenderTypes = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Creator</option>
+                  <option value="">Select</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username} - {user.email}
@@ -1084,7 +1109,7 @@ const ViewVenderTypes = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Company</option>
+                  <option value="">Select</option>
                   {companies.map((cp) => (
                     <option key={cp.id} value={cp.id}>
                       {cp.company_code} - {cp.company_name}

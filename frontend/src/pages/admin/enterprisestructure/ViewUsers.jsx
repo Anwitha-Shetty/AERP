@@ -26,6 +26,7 @@ import {
 } from "../../../store/slices/userSlice";
 import { FaEye, FaEyeSlash, FaTimes, FaTrashAlt } from "react-icons/fa";
 import api from "../../../utils/api";
+import dayjs from "dayjs";
 
 const ViewUsers = () => {
   const dispatch = useDispatch();
@@ -466,11 +467,11 @@ const ViewUsers = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[325px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -957,6 +958,30 @@ const ViewUsers = () => {
                       {selectedUser?.remarks || "--"}
                     </td>
                   </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Created At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedUser?.created_at
+                        ? dayjs(selectedUser?.created_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Updated At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedUser?.updated_at
+                        ? dayjs(selectedUser?.updated_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -1118,7 +1143,7 @@ const ViewUsers = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select User Company</option>
+                  <option value="">Select</option>
                   {companies.map((cp) => (
                     <option key={cp.id} value={cp.id}>
                       {cp.company_code} - {cp.company_name}
@@ -1136,7 +1161,7 @@ const ViewUsers = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select User Type</option>
+                  <option value="">Select</option>
                   {userTypes.map((ut) => (
                     <option key={ut.id} value={ut.id}>
                       {ut.type}
@@ -1154,7 +1179,7 @@ const ViewUsers = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Position</option>
+                  <option value="">Select</option>
                   {positions.map((ps) => (
                     <option key={ps.id} value={ps.id}>
                       {ps.position}
@@ -1170,7 +1195,7 @@ const ViewUsers = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Manager</option>
+                  <option value="">Select</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username} - {user.email}
@@ -1228,7 +1253,7 @@ const ViewUsers = () => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="">Select Status</option>
+                  <option value="">Select</option>
                   {statuses.map((st) => (
                     <option key={st.id} value={st.id}>
                       {st.status}

@@ -17,7 +17,7 @@ import { useDispatch, useSelector } from "react-redux";
 const CreateVendorMaterial = () => {
   const dispatch = useDispatch();
   const { vendors, materials, uoms, users, companies } = useSelector(
-    (state) => state.vendormaterials,
+    (state) => state.vendorMaterials,
   );
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
@@ -115,14 +115,6 @@ const CreateVendorMaterial = () => {
       !formData.material ||
       !formData.purchase_uom ||
       !formData.price ||
-      !formData.minimum_order_quantity ||
-      !formData.lead_time_days ||
-      !formData.tax_percentage ||
-      !formData.discount_percentage ||
-      !formData.is_preferred ||
-      !formData.is_active ||
-      !formData.valid_from ||
-      !formData.valid_to ||
       !formData.creator ||
       !formData.company
     ) {
@@ -140,7 +132,7 @@ const CreateVendorMaterial = () => {
     });
 
     try {
-      const res = await dispatch(createVender(submitData)).unwrap();
+      const res = await dispatch(createVenderMaterial(submitData)).unwrap();
       if (res.status === 200 || res.status === 201) {
         showTemporaryMessage(
           "Vendor Material created successfully!",
@@ -203,11 +195,11 @@ const CreateVendorMaterial = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[325px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             {breadcrumbs.map((b, index) => (
@@ -290,7 +282,7 @@ const CreateVendorMaterial = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Vendor</option>
+                            <option value="">Select</option>
                             {vendors.map((vs) => (
                               <option key={vs.id} value={vs.id}>
                                 {vs.vendor_name}
@@ -300,166 +292,92 @@ const CreateVendorMaterial = () => {
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Short Name <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="short_name"
-                            placeholder="Enter Short Name"
-                            value={formData.short_name}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Vendor Name <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="vendor_name"
-                            placeholder="Enter Vendor Name"
-                            value={formData.vendor_name}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Vendor Type <span className="text-red-500">*</span>
+                            Material <span className="text-red-500">*</span>
                           </label>
                           <select
-                            name="vendor_type"
-                            value={formData.vendor_type}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select Vendor Type</option>
-                            {/* {vendortypes.map((vt) => (
-                              <option key={vt.id} value={vt.id}>
-                                {vt.name}
-                              </option>
-                            ))} */}
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Contact Person
-                          </label>
-                          <input
-                            type="text"
-                            name="contact_person"
-                            placeholder="Enter Contact Person"
-                            value={formData.contact_person}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Email ID
-                          </label>
-                          <input
-                            type="email"
-                            name="email"
-                            placeholder="Enter Email ID"
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Phone
-                          </label>
-                          <input
-                            type="text"
-                            name="phone"
-                            placeholder="Enter Phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            maxLength={10}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Mobile No
-                          </label>
-                          <input
-                            type="text"
-                            name="mobile"
-                            placeholder="Enter Mobile No"
-                            value={formData.mobile}
-                            onChange={handleChange}
-                            maxLength={10}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Website
-                          </label>
-                          <input
-                            type="url"
-                            name="website"
-                            placeholder="Enter Website URL"
-                            value={formData.website}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Active
-                          </label>
-                          <select
-                            name="is_active"
-                            value={formData.is_active}
+                            name="material"
+                            value={formData.material}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
                             <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
+                            {materials.map((mt) => (
+                              <option key={mt.id} value={mt.id}>
+                                {mt.material_name}
+                              </option>
+                            ))}
                           </select>
-                        </div>
-                        <div className="flex items-start col-span-2">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Billing Address
-                          </label>
-                          <textarea
-                            name="billing_address"
-                            value={formData.billing_address}
-                            onChange={handleChange}
-                            rows={2}
-                            className="flex-1 w-full textarea-input"
-                            placeholder="Enter billing address..."
-                          ></textarea>
-                        </div>
-                        <div className="flex items-start col-span-2">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Shipping Address
-                          </label>
-                          <textarea
-                            name="shipping_address"
-                            value={formData.shipping_address}
-                            onChange={handleChange}
-                            rows={2}
-                            className="flex-1 w-full textarea-input"
-                            placeholder="Enter shipping address..."
-                          ></textarea>
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Postal Code <span className="text-red-500">*</span>
+                            Unit of Measure{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="purchase_uom"
+                            value={formData.purchase_uom}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            {uoms.map((uom) => (
+                              <option key={uom.id} value={uom.id}>
+                                {uom.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Price <span className="text-red-500">*</span>
                           </label>
                           <input
-                            type="text"
-                            name="postal_code"
-                            placeholder="Enter Postal Code"
-                            value={formData.postal_code}
-                            onChange={handleChange}
+                            type="number"
+                            name="price"
+                            placeholder="Enter Price"
+                            value={formData.price}
+                            onKeyDown={(e) => {
+                              if (["-", "+", "e", "E"].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              const regex = /^\d*(\.\d{0,4})?$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            step="0.0001"
+                            inputMode="decimal"
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Minimum Order Quantity
+                          </label>
+                          <input
+                            type="number"
+                            name="minimum_order_quantity"
+                            placeholder="Enter Minimum Order Qty"
+                            value={formData.minimum_order_quantity}
+                            onKeyDown={(e) => {
+                              if (["-", "+", "e", "E"].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const regex = /^\d*(\.\d{0,3})?$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            step="0.001"
+                            inputMode="decimal"
                             className="flex-1 w-full form-input"
                           />
                         </div>
@@ -469,55 +387,111 @@ const CreateVendorMaterial = () => {
                           </label>
                           <input
                             type="number"
-                            name="default_lead_time_days"
-                            placeholder="eg. 1"
-                            value={formData.default_lead_time_days}
-                            min="0"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === "" || /^\d+$/.test(value)) {
-                                handleChange(e);
-                              }
-                            }}
+                            name="lead_time_days"
+                            placeholder="Enter Lead Time (Days)"
+                            value={formData.lead_time_days}
                             onKeyDown={(e) => {
-                              if (e.key === "-" || e.key === "e") {
+                              if (["-", "+", "e", "E", "."].includes(e.key)) {
                                 e.preventDefault();
                               }
                             }}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              const regex = /^\d*$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            inputMode="numeric"
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Minimum Order Value
+                            Tax (%)
                           </label>
                           <input
                             type="number"
-                            name="minimum_order_value"
-                            placeholder="Enter Minimum Order Value"
-                            value={formData.minimum_order_value}
-                            min="0"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === "" || /^\d+$/.test(value)) {
-                                handleChange(e);
-                              }
-                            }}
+                            name="tax_percentage"
+                            placeholder="Enter Tax (%)"
+                            value={formData.tax_percentage}
                             onKeyDown={(e) => {
-                              if (e.key === "-" || e.key === "e") {
+                              if (["-", "+", "e", "E"].includes(e.key)) {
                                 e.preventDefault();
                               }
                             }}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              const regex = /^\d*(\.\d{0,2})?$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Blacklisted
+                            Discount (%)
+                          </label>
+                          <input
+                            type="number"
+                            name="discount_percentage"
+                            placeholder="Enter Discount (%)"
+                            value={formData.discount_percentage}
+                            onKeyDown={(e) => {
+                              if (["-", "+", "e", "E"].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              const regex = /^\d*(\.\d{0,2})?$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Valid From 
+                          </label>
+                          <input
+                            type="date"
+                            name="valid_from"
+                            value={formData.valid_from}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Valid To 
+                          </label>
+                          <input
+                            type="date"
+                            name="valid_to"
+                            value={formData.valid_to}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Preferred
                           </label>
                           <select
-                            name="is_blacklisted"
-                            value={formData.is_blacklisted}
+                            name="is_preferred"
+                            value={formData.is_preferred}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
@@ -528,26 +502,11 @@ const CreateVendorMaterial = () => {
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Approved By CFO
+                            Active
                           </label>
                           <select
-                            name="is_approved_by_cfo"
-                            value={formData.is_approved_by_cfo}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Validated
-                          </label>
-                          <select
-                            name="is_validated"
-                            value={formData.is_validated}
+                            name="is_active"
+                            value={formData.is_active}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
@@ -566,7 +525,7 @@ const CreateVendorMaterial = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Creator</option>
+                            <option value="">Select</option>
                             {users.map((user) => (
                               <option key={user.id} value={user.id}>
                                 {user.username} - {user.email}
@@ -584,26 +543,13 @@ const CreateVendorMaterial = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           >
-                            <option value="">Select Company</option>
+                            <option value="">Select</option>
                             {companies.map((cp) => (
                               <option key={cp.id} value={cp.id}>
                                 {cp.company_code} - {cp.company_name}
                               </option>
                             ))}
                           </select>
-                        </div>
-                        <div className="flex items-start col-span-2">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Remarks
-                          </label>
-                          <textarea
-                            name="remarks"
-                            value={formData.remarks}
-                            onChange={handleChange}
-                            rows={2}
-                            className="flex-1 w-full textarea-input"
-                            placeholder="Enter remarks..."
-                          ></textarea>
                         </div>
                       </div>
                     </div>

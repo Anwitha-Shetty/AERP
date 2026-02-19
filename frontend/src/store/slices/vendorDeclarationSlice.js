@@ -1,26 +1,28 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
-export const fetchVenderMaterials = createAsyncThunk(
-  "vendorMaterials/fetchVenderMaterials",
+export const fetchVenderDeclarations = createAsyncThunk(
+  "vendorDeclarations/fetchVendorDeclarations",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/vendor/vendor_material/");
+      const res = await api.get("/vendor/vendor_declaration/");
       return res.data;
     } catch (err) {
       return rejectWithValue(
-        err.response?.data || "Error fetching vendor materials",
+        err.response?.data || "Error fetching vendor declarations",
       );
     }
   },
 );
 
-export const createVenderMaterial = createAsyncThunk(
-  "vendorMaterials/createVenderMaterial",
+export const createVenderDeclaration = createAsyncThunk(
+  "vendorDeclarations/createVenderDeclaration",
   async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.post("/vendor/vendor_material/", formData);
-      dispatch(fetchVenderMaterials());
+      const res = await api.post("/vendor/vendor_declaration/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      dispatch(fetchVenderDeclarations());
       return {
         data: res.data,
         status: res.status,
@@ -34,12 +36,14 @@ export const createVenderMaterial = createAsyncThunk(
   },
 );
 
-export const updateVenderMaterial = createAsyncThunk(
-  "vendorMaterials/updateVenderMaterial",
+export const updateVenderDeclaration = createAsyncThunk(
+  "vendorDeclarations/updateVenderDeclaration",
   async ({ id, formData }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.put(`/vendor/vendor_material/${id}`, formData);
-      dispatch(fetchVenderMaterials());
+      const res = await api.put(`/vendor/vendor_declaration/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      dispatch(fetchVenderDeclarations());
       return {
         id,
         data: res.data,
@@ -54,12 +58,12 @@ export const updateVenderMaterial = createAsyncThunk(
   },
 );
 
-export const deleteVenderMaterial = createAsyncThunk(
-  "vendorMaterials/deleteVenderMaterial",
+export const deleteVenderDeclaration = createAsyncThunk(
+  "vendorDeclarations/deleteVenderDeclaration",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.delete(`/vendor/vendor_material/${id}`);
-      dispatch(fetchVenderMaterials());
+      const res = await api.delete(`/vendor/vendor_declaration/${id}`);
+      dispatch(fetchVenderDeclarations());
       return {
         id,
         status: res.status,
@@ -75,7 +79,7 @@ export const deleteVenderMaterial = createAsyncThunk(
 
 /* ================= FK DROPDOWNS ================= */
 export const fetchVenders = createAsyncThunk(
-  "vendorMaterials/fetchVenders",
+  "vendorDeclarations/fetchVenders",
   async (_, { rejectWithValue }) => {
     try {
       const res = await api.get("/vendor/vendor/");
@@ -86,32 +90,8 @@ export const fetchVenders = createAsyncThunk(
   },
 );
 
-export const fetchMaterials = createAsyncThunk(
-  "vendorMaterials/fetchMaterials",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/inventory/material/");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data);
-    }
-  },
-);
-
-export const fetchUnitOfMeasurements = createAsyncThunk(
-  "vendorMaterials/fetchUnitOfMeasurements",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/inventory/unit_of_measure/");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data);
-    }
-  },
-);
-
 export const fetchUsers = createAsyncThunk(
-  "vendorMaterials/fetchUsers",
+  "vendorDeclarations/fetchUsers",
   async (_, { rejectWithValue }) => {
     try {
       const res = await api.get("/people/user/");
@@ -123,7 +103,7 @@ export const fetchUsers = createAsyncThunk(
 );
 
 export const fetchCompanies = createAsyncThunk(
-  "vendorMaterials/fetchCompanies",
+  "vendorDeclarations/fetchCompanies",
   async (_, { rejectWithValue }) => {
     try {
       const res = await api.get("/people/company/");
@@ -135,13 +115,11 @@ export const fetchCompanies = createAsyncThunk(
 );
 
 /* ================= SLICE ================= */
-const vendorMaterialSlice = createSlice({
-  name: "vendorMaterials",
+const vendorDeclarationSlice = createSlice({
+  name: "vendorDeclarations",
   initialState: {
-    vendorMaterials: [],
+    vendorDeclarations: [],
     vendors: [],
-    materials: [],
-    uoms: [],
     users: [],
     companies: [],
     loading: false,
@@ -150,25 +128,19 @@ const vendorMaterialSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchVenderMaterials.pending, (state) => {
+      .addCase(fetchVenderDeclarations.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchVenderMaterials.fulfilled, (state, action) => {
+      .addCase(fetchVenderDeclarations.fulfilled, (state, action) => {
         state.loading = false;
-        state.vendorMaterials = action.payload;
+        state.vendorDeclarations = action.payload;
       })
-      .addCase(fetchVenderMaterials.rejected, (state, action) => {
+      .addCase(fetchVenderDeclarations.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
       .addCase(fetchVenders.fulfilled, (state, action) => {
         state.vendors = action.payload;
-      })
-      .addCase(fetchMaterials.fulfilled, (state, action) => {
-        state.materials = action.payload;
-      })
-      .addCase(fetchUnitOfMeasurements.fulfilled, (state, action) => {
-        state.uoms = action.payload;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.users = action.payload;
@@ -179,4 +151,4 @@ const vendorMaterialSlice = createSlice({
   },
 });
 
-export default vendorMaterialSlice.reducer;
+export default vendorDeclarationSlice.reducer;

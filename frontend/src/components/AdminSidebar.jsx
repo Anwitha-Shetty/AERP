@@ -210,7 +210,7 @@ const AdminSidebar = () => {
 
   return (
     <div className="flex relative min-h-screen bg-gradient-to-t from-gray-100 via-gray-50 to-white">
-      <header className="fixed top-0 left-[325px] w-[calc(100%-325px)] h-20 flex items-center justify-between px-6 z-30">
+      <header className="fixed top-0 left-[350px] w-[calc(100%-350px)] h-20 flex items-center justify-between px-6 z-30">
         <div className="flex items-center space-x-5 ml-auto z-50">
           <div className="flex items-center border border-gray-300 overflow-hidden rounded h-8">
             <input
@@ -281,7 +281,7 @@ const AdminSidebar = () => {
         </div>
       </header>
 
-      <aside className="fixed top-0 left-0 z-20 w-[325px] h-full px-3 flex flex-col">
+      <aside className="fixed top-0 left-0 z-20 w-[350px] h-full px-3 flex flex-col">
         <div className="cursor-pointer mb-2" onClick={handleLogoClick}>
           <img src={logo} alt="Logo" className="w-full h-34 object-contain" />
         </div>
@@ -320,7 +320,7 @@ const AdminSidebar = () => {
         </div>
       )}
 
-      <main className="ml-[325px] mt-20 p-6 flex-1"></main>
+      <main className="ml-[350px] mt-20 p-6 flex-1"></main>
     </div>
   );
 };

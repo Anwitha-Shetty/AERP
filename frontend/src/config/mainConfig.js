@@ -124,13 +124,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorMaterialMenu",
-                label: "Create Material",
+                label: "Create Vendor Material",
                 path: "/admin/vendor-material/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorMaterialsMenu",
-                label: "View Materials",
+                label: "View Vendor Materials",
                 path: "/admin/vendor-materials/view",
                 iconName: "FiUsers",
               },
@@ -143,13 +143,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorDeclarationMenu",
-                label: "Create Declaration",
+                label: "Create Vendor Declaration",
                 path: "/admin/vendor-declaration/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorDeclarationsMenu",
-                label: "View Declarations",
+                label: "View Vendor Declarations",
                 path: "/admin/vendor-declarations/view",
                 iconName: "FiUsers",
               },
@@ -162,13 +162,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorQuotationMenu",
-                label: "Create Quotation",
+                label: "Create Vendor Quotation",
                 path: "/admin/vendor-quotation/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorQuotationsMenu",
-                label: "View Quotations",
+                label: "View Vendor Quotations",
                 path: "/admin/vendor-quotations/view",
                 iconName: "FiUsers",
               },
@@ -181,13 +181,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorKYCMenu",
-                label: "Create KYC",
+                label: "Create Vendor KYC",
                 path: "/admin/vendor-kyc/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorKYCsMenu",
-                label: "View KYC",
+                label: "View Vendor KYC",
                 path: "/admin/vendor-kyc/view",
                 iconName: "FiUsers",
               },
