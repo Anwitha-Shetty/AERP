@@ -67,13 +67,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorTypeMenu",
-                label: "Create Type",
+                label: "Create Vendor Type",
                 path: "/admin/vendor-types/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorTypesMenu",
-                label: "View Types",
+                label: "View Vendor Types",
                 path: "/admin/vendor-types/view",
                 iconName: "FiUsers",
               },
@@ -86,13 +86,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorKYCStatusMenu",
-                label: "Create KYC Status",
+                label: "Create Vendor KYC Status",
                 path: "/admin/vendor-kyc-status/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorKYCStatusMenu",
-                label: "View KYC Status",
+                label: "View Vendor KYC Status",
                 path: "/admin/vendor-kyc-status/view",
                 iconName: "FiUsers",
               },

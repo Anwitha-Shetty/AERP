@@ -384,21 +384,6 @@ const CreateUser = () => {
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Active <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="is_active"
-                            value={formData.is_active}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
                             Photo
                           </label>
                           <input
@@ -556,6 +541,21 @@ const CreateUser = () => {
                                 {st.status}
                               </option>
                             ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Active <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="is_active"
+                            value={formData.is_active}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
                           </select>
                         </div>
                         <div className="flex items-start col-span-2">

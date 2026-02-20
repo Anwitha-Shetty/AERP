@@ -8,6 +8,8 @@ import vendorReducer from "./slices/vendorSlice";
 import vendorMaterialReducer from "./slices/vendorMaterialSlice";
 import vendorDeclarationReducer from "./slices/vendorDeclarationSlice";
 import vendorQuotationReducer from "./slices/vendorQuotationSlice";
+import vendorKYCStatusReducer from "./slices/vendorKYCStatusSlice";
+import vendorKYCReducer from "./slices/vendorKYCSlice";
 
 const store = configureStore({
   reducer: {
@@ -20,6 +22,8 @@ const store = configureStore({
     vendorMaterials: vendorMaterialReducer,
     vendorDeclarations: vendorDeclarationReducer,
     vendorQuotations: vendorQuotationReducer,
+    vendorKYCStatus: vendorKYCStatusReducer,
+    vendorKYC: vendorKYCReducer,
   },
 });
 

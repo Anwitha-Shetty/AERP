@@ -503,9 +503,9 @@ const ViewVendorMaterials = () => {
             {/* Left Section */}
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
-              <h1 className="text-lg font-bold text-gray-800">
+              <h2 className="text-lg font-semibold text-gray-700">
                 View Vendor Materials
-              </h1>
+              </h2>
             </div>
             {/* Right Section */}
             <div className="flex items-center gap-2">
@@ -548,7 +548,7 @@ const ViewVendorMaterials = () => {
           <div className="overflow-x-auto">
             <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <table className="min-w-full text-sm text-left divide-y divide-gray-200">
-                <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
+                <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
                       {filteredVendorMaterials.length <= 1 ? (
@@ -971,7 +971,7 @@ const ViewVendorMaterials = () => {
       {/* EDIT Modal */}
       {showEditModal && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
-          <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md">
+          <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />

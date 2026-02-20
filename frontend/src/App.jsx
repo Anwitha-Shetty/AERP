@@ -20,6 +20,9 @@ import CreateVendorDeclaration from "./pages/admin/vendors/CreateVendorDeclarati
 import ViewVendorDeclarations from "./pages/admin/vendors/ViewVendorDeclarations";
 import CreateVendorQuotation from "./pages/admin/vendors/CreateVendorQuotation";
 import ViewVendorQuotations from "./pages/admin/vendors/ViewVendorQuotations";
+import CreateVendorKYCStatus from "./pages/admin/vendors/CreateVendorKYCStatus";
+import ViewVendorKYCStatus from "./pages/admin/vendors/ViewVendorKYCStatus";
+import CreateVendorKYC from "./pages/admin/vendors/CreateVendorKYC";
 
 function App() {
   return (
@@ -67,6 +70,15 @@ function App() {
           path="/admin/vendor-quotations/view"
           element={<ViewVendorQuotations />}
         />
+        <Route
+          path="/admin/vendor-kyc-status/create"
+          element={<CreateVendorKYCStatus />}
+        />
+        <Route
+          path="/admin/vendor-kyc-status/view"
+          element={<ViewVendorKYCStatus />}
+        />
+        <Route path="/admin/vendor-kyc/create" element={<CreateVendorKYC />} />
 
         {/* Materials */}
         <Route path="/admin/material-groups" element={<MaterialGroups />} />

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
@@ -12,41 +12,33 @@ import {
   FiInfo,
   FiPlus,
   FiSearch,
+  FiUsers,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchCompanies,
-  updateCompany,
-  deleteCompany,
-  fetchCompanyStatus,
+  fetchVenderMaterials,
+  updateVenderMaterial,
+  deleteVenderMaterial,
+  fetchVenders,
+  fetchMaterials,
+  fetchUnitOfMeasurements,
   fetchUsers,
-  fetchCurrencies,
-  fetchCountries,
-  fetchStates,
-  fetchCities,
-  fetchLanguages,
-  fetchBusinessAreas,
-  fetchBusinessSectors,
-} from "../../../store/slices/companySlice";
-import { FaBuilding, FaTimes, FaTrashAlt } from "react-icons/fa";
-import api from "../../../utils/api";
+  fetchCompanies,
+} from "../../../store/slices/vendorMaterialSlice";
+import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
 
-const ViewCompany = () => {
+const ViewVendorKYC = () => {
   const dispatch = useDispatch();
   const {
-    companies,
+    vendors,
+    materials,
+    uoms,
     users,
-    statuses,
-    currencies,
-    countries,
-    states,
-    cities,
-    languages,
-    businessareas,
-    businesssectors,
+    companies,
+    vendorMaterials,
     loading,
-  } = useSelector((state) => state.companies);
+  } = useSelector((state) => state.vendorMaterials);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,22 +46,16 @@ const ViewCompany = () => {
   const rowsPerPage = 7;
 
   useEffect(() => {
-    dispatch(fetchCompanies());
-    dispatch(fetchCompanyStatus());
+    dispatch(fetchVenderMaterials());
+    dispatch(fetchVenders());
+    dispatch(fetchMaterials());
+    dispatch(fetchUnitOfMeasurements());
     dispatch(fetchUsers());
-    dispatch(fetchCurrencies());
-    dispatch(fetchCountries());
-    dispatch(fetchStates());
-    dispatch(fetchCities());
-    dispatch(fetchLanguages());
-    dispatch(fetchBusinessAreas());
-    dispatch(fetchBusinessSectors());
+    dispatch(fetchCompanies());
   }, [dispatch]);
 
-  const photoRef = useRef(null);
-
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedCompanies, setSelectedCompanies] = useState([]);
+  const [selectedVendorMaterials, setSelectedVendorMaterials] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -85,31 +71,26 @@ const ViewCompany = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedVendorMaterial, setSelectedVendorMaterial] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    organization_id: "",
-    company_name: "",
-    company_code: "",
-    company_description: "",
-    parent_company: "",
-    company_logo: null,
-    company_admin: "",
-    currency: "",
-    status: "",
-    country: "",
-    state: "",
-    city: "",
-    language: "",
-    business_area: "",
-    business_sector: "",
-  });
-
-  const [existingFiles, setExistingFiles] = useState({
-    company_logo: "",
+    vendor: "",
+    material: "",
+    purchase_uom: "",
+    price: "",
+    minimum_order_quantity: "",
+    lead_time_days: "",
+    tax_percentage: "",
+    discount_percentage: "",
+    is_preferred: "",
+    is_active: "",
+    valid_from: "",
+    valid_to: "",
+    creator: "",
+    company: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -147,10 +128,10 @@ const ViewCompany = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedCompanies.length > 0) {
+      if (isBulkDelete && selectedVendorMaterials.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedCompanies),
-          fullLabel: selectedCompanies.join(", "),
+          label: formatIdsWithEllipsis(selectedVendorMaterials),
+          fullLabel: selectedVendorMaterials.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -188,8 +169,8 @@ const ViewCompany = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedCompany?.id) {
-      updateBreadcrumbs("View", selectedCompany.id);
+    } else if (showConfirm && selectedVendorMaterial?.id) {
+      updateBreadcrumbs("View", selectedVendorMaterial.id);
     } else {
       updateBreadcrumbs();
     }
@@ -198,9 +179,9 @@ const ViewCompany = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedCompanies,
+    selectedVendorMaterials,
     editId,
-    selectedCompany,
+    selectedVendorMaterial,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -221,43 +202,31 @@ const ViewCompany = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handlePhotoChange = () => {
-    const file = photoRef.current?.files?.[0];
-    if (!file) return;
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
-      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      photoRef.current.value = "";
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      company_logo: file,
-    }));
-  };
-
-  const handleOpenEdit = (company) => {
-    setEditId(company.id);
+  const handleOpenEdit = (vendor) => {
+    setEditId(vendor.id);
     setFormData({
-      organization_id: company.organization_id || "",
-      company_name: company.company_name || "",
-      company_code: company.company_code || "",
-      company_description: company.company_description || "",
-      parent_company: company.parent_company?.id || "",
-      company_logo: null,
-      company_admin: company.company_admin?.id || "",
-      currency: company.currency?.id || "",
-      status: company.status?.id || "",
-      country: company.country?.id || "",
-      state: company.state?.id || "",
-      city: company.city?.id || "",
-      language: company.language?.id || "",
-      business_area: company.business_area?.id || "",
-      business_sector: company.business_sector?.id || "",
+      vendor: vendor.vendor?.id || "",
+      material: vendor.material?.id || "",
+      purchase_uom: vendor.purchase_uom?.id || "",
+      price: vendor.price || "",
+      minimum_order_quantity: vendor.minimum_order_quantity || "",
+      lead_time_days: vendor.lead_time_days || "",
+      tax_percentage: vendor.tax_percentage || "",
+      discount_percentage: vendor.discount_percentage || "",
+      is_preferred:
+        vendor.is_preferred === null
+          ? ""
+          : vendor.is_preferred
+            ? "true"
+            : "false",
+      is_active:
+        vendor.is_active === null ? "" : vendor.is_active ? "true" : "false",
+      valid_from: vendor.valid_from || "",
+      valid_to: vendor.valid_to || "",
+      creator: vendor.creator?.id || "",
+      company: vendor.company?.id || "",
     });
-    setExistingFiles({
-      company_logo: company.company_logo || "",
-    });
+
     setShowEditModal(true);
   };
 
@@ -267,15 +236,8 @@ const ViewCompany = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (key === "company_logo") {
-        if (formData.company_logo instanceof File) {
-          data.append("company_logo", formData.company_logo);
-        }
-      } else if (key === "company_description") {
-        data.append(
-          "company_description",
-          formData.company_description ?? null,
-        );
+      if (key === "description") {
+        data.append("description", formData.description ?? null);
       } else {
         if (formData[key] !== undefined && formData[key] !== null) {
           data.append(key, formData[key]);
@@ -284,18 +246,12 @@ const ViewCompany = () => {
     });
 
     if (
-      !formData.organization_id ||
-      !formData.company_code ||
-      !formData.company_name ||
-      !formData.parent_company ||
-      !formData.company_admin ||
-      !formData.country ||
-      !formData.currency ||
-      !formData.state ||
-      !formData.city ||
-      !formData.language ||
-      !formData.business_area ||
-      !formData.business_sector
+      !formData.vendor ||
+      !formData.material ||
+      !formData.purchase_uom ||
+      !formData.price ||
+      !formData.creator ||
+      !formData.company
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -304,13 +260,16 @@ const ViewCompany = () => {
 
     try {
       const res = await dispatch(
-        updateCompany({ id: editId, formData: data }),
+        updateVenderMaterial({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Company updated successfully!", "success");
+        showTemporaryMessage(
+          "Vendor Material updated successfully!",
+          "success",
+        );
       } else if (res.status === 202) {
-        showTemporaryMessage("Company update accepted!", "success");
+        showTemporaryMessage("Vendor Material update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -344,7 +303,7 @@ const ViewCompany = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update user!", "error");
+        showTemporaryMessage("Failed to update vendor material!", "error");
       }
     }
   };
@@ -354,24 +313,18 @@ const ViewCompany = () => {
     setEditId(null);
 
     setFormData({
-      organization_id: "",
-      company_name: "",
-      company_code: "",
-      company_description: "",
-      parent_company: "",
-      company_logo: null,
-      company_admin: "",
-      currency: "",
-      status: "",
-      country: "",
-      state: "",
-      city: "",
-      language: "",
-      business_area: "",
-      business_sector: "",
+      name: "",
+      code: "",
+      short_name: "",
+      description: "",
+      is_service_provider: "",
+      is_material_supplier: "",
+      requires_contract: "",
+      is_active: "",
+      sort_order: "",
+      creator: "",
+      company: "",
     });
-
-    setExistingFiles({ company_logo: "" });
   };
 
   // ----------------- Delete handlers -----------------
@@ -382,32 +335,40 @@ const ViewCompany = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedCompanies.length === 0) return;
+    if (selectedVendorMaterials.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedCompanies.length > 0) {
+      if (isBulkDelete && selectedVendorMaterials.length > 0) {
         const res = await Promise.all(
-          selectedCompanies.map((id) => dispatch(deleteCompany(id)).unwrap()),
+          selectedVendorMaterials.map((id) =>
+            dispatch(deleteVenderMaterial(id)).unwrap(),
+          ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Company deleted successfully!", "success");
+          showTemporaryMessage(
+            "Vendor Material deleted successfully!",
+            "success",
+          );
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Company delete accepted!", "success");
+          showTemporaryMessage("Vendor Material delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedCompanies([]);
+        setSelectedVendorMaterials([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteCompany(deleteId)).unwrap();
+        const res = await dispatch(deleteVenderMaterial(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Company deleted successfully!", "success");
+          showTemporaryMessage(
+            "Vendor Material deleted successfully!",
+            "success",
+          );
         } else if (res.status === 202) {
-          showTemporaryMessage("Company delete accepted!", "success");
+          showTemporaryMessage("Vendor Material delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -443,30 +404,32 @@ const ViewCompany = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete Company!", "error");
+        showTemporaryMessage("Failed to delete vendor material!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredCompanies = companies.filter((company) => {
+  const filteredVendorMaterials = vendorMaterials.filter((vendor) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
-
+    let activeText = "";
+    if (vendor?.is_active === true) activeText = "yes";
+    else if (vendor?.is_active === false) activeText = "no";
     return (
-      normalize(company?.company_name).includes(search) ||
-      normalize(company?.parent_company?.company_name).includes(search) ||
-      normalize(company?.company_admin?.username).includes(search) ||
-      normalize(company?.business_area?.business_area).includes(search) ||
-      normalize(company?.status?.status).includes(search)
+      normalize(vendor?.vendor?.vendor_name).includes(search) ||
+      normalize(vendor?.material?.material_name).includes(search) ||
+      normalize(vendor?.creator?.username).includes(search) ||
+      normalize(vendor?.company?.company_name).includes(search) ||
+      normalize(activeText).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredCompanies.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendorMaterials.length / rowsPerPage);
 
-  const paginatedCompanies = filteredCompanies.slice(
+  const paginatedVendorMaterials = filteredVendorMaterials.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -534,15 +497,17 @@ const ViewCompany = () => {
           </div>
         </div>
 
+        {/* Header */}
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
+            {/* Left Section */}
             <div className="flex items-center gap-2">
-              <FaBuilding className="text-amber-400 text-lg" />
+              <FiUsers className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Companies
+                View Vendor Materials
               </h2>
             </div>
-
+            {/* Right Section */}
             <div className="flex items-center gap-2">
               <div className="relative">
                 <FiSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
@@ -557,20 +522,20 @@ const ViewCompany = () => {
               </div>
 
               <Link
-                to="/admin/company/create"
+                to="/admin/vendor-material/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Company
+                <FiPlus /> Create Vendor Material
               </Link>
 
-              {selectedCompanies.length > 1 && (
+              {selectedVendorMaterials.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedCompanies.length}
+                    {selectedVendorMaterials.length}
                   </span>
                 </button>
               )}
@@ -578,6 +543,7 @@ const ViewCompany = () => {
           </div>
         </div>
 
+        {/* TABLE */}
         <div className="bg-white rounded-md shadow-sm border border-gray-300 w-full">
           <div className="overflow-x-auto">
             <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
@@ -585,20 +551,22 @@ const ViewCompany = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredCompanies.length <= 1 ? (
+                      {filteredVendorMaterials.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredCompanies.length > 1 &&
-                            selectedCompanies.length ===
-                              filteredCompanies.length
+                            filteredVendorMaterials.length > 1 &&
+                            selectedVendorMaterials.length ===
+                              filteredVendorMaterials.length
                           }
                           onChange={(e) =>
-                            setSelectedCompanies(
+                            setSelectedVendorMaterials(
                               e.target.checked
-                                ? filteredCompanies.map((company) => company.id)
+                                ? filteredVendorMaterials.map(
+                                    (vendor) => vendor.id,
+                                  )
                                 : [],
                             )
                           }
@@ -607,11 +575,11 @@ const ViewCompany = () => {
                       )}
                     </th>
                     {[
-                      "COMPANY NAME",
-                      "PARENT COMPANY",
-                      "COMPANY ADMIN",
-                      "BUSINESS AREA",
-                      "STATUS",
+                      "VENDOR NAME",
+                      "MATERIAL NAME",
+                      "CREATOR",
+                      "COMPANY",
+                      "ACTIVE",
                       "ACTIONS",
                     ].map((label, idx) => (
                       <th
@@ -636,45 +604,59 @@ const ViewCompany = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredCompanies.length > 0 ? (
-                    paginatedCompanies.map((company) => (
+                  ) : filteredVendorMaterials.length > 0 ? (
+                    paginatedVendorMaterials.map((vendor) => (
                       <tr
-                        key={company.id}
+                        key={vendor.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedCompanies.includes(company.id)}
+                            checked={selectedVendorMaterials.includes(
+                              vendor.id,
+                            )}
                             onChange={() =>
-                              setSelectedCompanies((prev) =>
-                                prev.includes(company.id)
-                                  ? prev.filter((x) => x !== company.id)
-                                  : [...prev, company.id],
+                              setSelectedVendorMaterials((prev) =>
+                                prev.includes(vendor.id)
+                                  ? prev.filter((x) => x !== vendor.id)
+                                  : [...prev, vendor.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {company?.company_name || "--"}
+                          {vendor?.vendor?.vendor_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {company?.parent_company?.company_name || "--"}
+                          {vendor?.material?.material_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {company?.company_admin?.username || "--"}
+                          {vendor?.creator?.username || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {company?.business_area?.business_area || "--"}
+                          {vendor?.company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {company?.status?.status || "--"}
+                          {vendor?.is_active == null ? (
+                            "--"
+                          ) : (
+                            <span
+                              className={
+                                vendor?.is_active
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                              }
+                            >
+                              {vendor?.is_active ? "Yes" : "No"}
+                            </span>
+                          )}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(company)}
+                              onClick={() => handleOpenEdit(vendor)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -682,8 +664,8 @@ const ViewCompany = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedCompany(company);
-                                updateBreadcrumbs("View", company.id);
+                                setSelectedVendorMaterial(vendor);
+                                updateBreadcrumbs("View", vendor.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -692,7 +674,7 @@ const ViewCompany = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(company.id)}
+                              onClick={() => handleDelete(vendor.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -708,7 +690,7 @@ const ViewCompany = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
-                        No companies found!
+                        No vendor materials found!
                       </td>
                     </tr>
                   )}
@@ -781,14 +763,15 @@ const ViewCompany = () => {
         )}
       </main>
 
-      {showConfirm && selectedCompany && (
+      {/* Confirmation Modal */}
+      {showConfirm && selectedVendorMaterial && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <FaBuilding className="text-amber-400 text-lg" />
+                <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Company
+                  View Vendor Material
                 </h2>
               </div>
 
@@ -806,141 +789,152 @@ const ViewCompany = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Organization ID:
+                      Vendor:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.organization_id || "--"}
+                      {selectedVendorMaterial?.vendor?.vendor_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Company Code:
+                      Material:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.company_code || "--"}
+                      {selectedVendorMaterial?.material?.material_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Company Name:
+                      Unit of Measure:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.company_name || "--"}
+                      {selectedVendorMaterial?.purchase_uom?.name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Logo:
+                      Price:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.company_logo ? (
-                        <a
-                          href={
-                            selectedCompany.company_logo.startsWith("http")
-                              ? selectedCompany.company_logo
-                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedCompany.company_logo}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-amber-400"
-                        >
-                          {selectedCompany.company_logo.split("/").pop()}
-                        </a>
-                      ) : (
+                      {selectedVendorMaterial?.price || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Minimum Order Quantity:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.minimum_order_quantity || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Lead Time:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.lead_time_days != null
+                        ? `${selectedVendorMaterial.lead_time_days} ${
+                            selectedVendorMaterial.lead_time_days <= 1
+                              ? "day"
+                              : "days"
+                          }`
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Tax (%):
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.tax_percentage || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Discount (%):
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.discount_percentage || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Valid From:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.valid_from
+                        ? dayjs(selectedVendorMaterial?.valid_from).format(
+                            "DD-MM-YYYY",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Valid To:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.valid_to
+                        ? dayjs(selectedVendorMaterial?.valid_to).format(
+                            "DD-MM-YYYY",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Preferred:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.is_preferred == null ? (
                         "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorMaterial?.is_preferred
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorMaterial?.is_preferred ? "Yes" : "No"}
+                        </span>
                       )}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left align-top">
-                      Description:
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Active:
                     </td>
-                    <td className="w-3/5 py-1 text-left pl-4 align-top">
-                      {selectedCompany?.company_description || "--"}
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorMaterial?.is_active == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorMaterial?.is_active
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorMaterial?.is_active ? "Yes" : "No"}
+                        </span>
+                      )}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Parent Company:
+                      Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.parent_company?.company_name || "--"}
+                      {selectedVendorMaterial?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Company Admin:
+                      Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.company_admin?.username || "--"} -{" "}
-                      {selectedCompany?.company_admin?.email || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.currency?.currency_code || "--"} -{" "}
-                      {selectedCompany?.currency?.currency_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Country:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.country?.country_code || "--"} -{" "}
-                      {selectedCompany?.country?.country_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      State:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.state?.state_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      City:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.city?.city_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Language:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.language?.language_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Business Area:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.business_area?.business_area || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Business Sector:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.business_sector?.business_sector ||
-                        "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Status:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.status?.status || "--"}
+                      {selectedVendorMaterial?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -948,8 +942,8 @@ const ViewCompany = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.created_at
-                        ? dayjs(selectedCompany?.created_at).format(
+                      {selectedVendorMaterial?.created_at
+                        ? dayjs(selectedVendorMaterial?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -960,8 +954,8 @@ const ViewCompany = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCompany?.updated_at
-                        ? dayjs(selectedCompany?.updated_at).format(
+                      {selectedVendorMaterial?.updated_at
+                        ? dayjs(selectedVendorMaterial?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -974,14 +968,15 @@ const ViewCompany = () => {
         </div>
       )}
 
+      {/* EDIT Modal */}
       {showEditModal && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <FaBuilding className="text-amber-400 text-lg" />
+                <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Company
+                  Change Vendor Material
                 </h2>
               </div>
               <button
@@ -995,104 +990,237 @@ const ViewCompany = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Organization ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="organization_id"
-                  placeholder="Enter Organization ID"
-                  value={formData.organization_id}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Company Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="company_code"
-                  placeholder="Enter Company Code"
-                  value={formData.company_code}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">
-                  Company Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="company_name"
-                  placeholder="Enter Company Name"
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">Logo</label>
-                <input
-                  type="file"
-                  name="company_logo"
-                  accept="image/png, image/jpeg"
-                  ref={photoRef}
-                  onChange={handlePhotoChange}
-                  className="form-input"
-                />
-                {existingFiles.company_logo && (
-                  <a
-                    href={
-                      existingFiles.company_logo.startsWith("http")
-                        ? existingFiles.company_logo
-                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.company_logo}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-amber-400"
-                  >
-                    {existingFiles.company_logo.split("/").pop()}
-                  </a>
-                )}
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">Description</label>
-                <textarea
-                  name="company_description"
-                  value={formData.company_description}
-                  onChange={handleChange}
-                  rows={2}
-                  className="textarea-input"
-                  placeholder="Enter company description..."
-                ></textarea>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Parent Company <span className="text-red-500">*</span>
+                  Vendor <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="parent_company"
-                  value={formData.parent_company}
+                  name="vendor"
+                  value={formData.vendor}
                   onChange={handleChange}
                   className="form-input"
                 >
                   <option value="">Select</option>
-                  {companies.map((cp) => (
-                    <option key={cp.id} value={cp.id}>
-                      {cp.company_code} - {cp.company_name}
+                  {vendors.map((vs) => (
+                    <option key={vs.id} value={vs.id}>
+                      {vs.vendor_name}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Company Admin <span className="text-red-500">*</span>
+                  Material <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="company_admin"
-                  value={formData.company_admin}
+                  name="material"
+                  value={formData.material}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {materials.map((mt) => (
+                    <option key={mt.id} value={mt.id}>
+                      {mt.material_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Unit of Measure <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="purchase_uom"
+                  value={formData.purchase_uom}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {uoms.map((uom) => (
+                    <option key={uom.id} value={uom.id}>
+                      {uom.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Price <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="Enter Price"
+                  value={formData.price}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    const regex = /^\d*(\.\d{0,4})?$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  step="0.0001"
+                  inputMode="decimal"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Minimum Order Quantity</label>
+                <input
+                  type="number"
+                  name="minimum_order_quantity"
+                  placeholder="Enter Minimum Order Qty"
+                  value={formData.minimum_order_quantity}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const regex = /^\d*(\.\d{0,3})?$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  step="0.001"
+                  inputMode="decimal"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Lead Time</label>
+                <input
+                  type="number"
+                  name="lead_time_days"
+                  placeholder="Enter Lead Time (Days)"
+                  value={formData.lead_time_days}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E", "."].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    const regex = /^\d*$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  inputMode="numeric"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Tax (%)</label>
+                <input
+                  type="number"
+                  name="tax_percentage"
+                  placeholder="Enter Tax (%)"
+                  value={formData.tax_percentage}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    const regex = /^\d*(\.\d{0,2})?$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Discount (%)</label>
+                <input
+                  type="number"
+                  name="discount_percentage"
+                  placeholder="Enter Discount (%)"
+                  value={formData.discount_percentage}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    const regex = /^\d*(\.\d{0,2})?$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Valid From</label>
+                <input
+                  type="date"
+                  name="valid_from"
+                  value={formData.valid_from}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Valid To</label>
+                <input
+                  type="date"
+                  name="valid_to"
+                  value={formData.valid_to}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Preferred</label>
+                <select
+                  name="is_preferred"
+                  value={formData.is_preferred}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Active</label>
+                <select
+                  name="is_active"
+                  value={formData.is_active}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Creator <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="creator"
+                  value={formData.creator}
                   onChange={handleChange}
                   className="form-input"
                 >
@@ -1106,142 +1234,18 @@ const ViewCompany = () => {
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency <span className="text-red-500">*</span>
+                  Company <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="currency"
-                  value={formData.currency}
+                  name="company"
+                  value={formData.company}
                   onChange={handleChange}
                   className="form-input"
                 >
                   <option value="">Select</option>
-                  {currencies.map((cr) => (
-                    <option key={cr.id} value={cr.id}>
-                      {cr.currency_code} - {cr.currency_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Country <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {countries.map((ct) => (
-                    <option key={ct.id} value={ct.id}>
-                      {ct.country_code} - {ct.country_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  State <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {states.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.state_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {cities.map((cs) => (
-                    <option key={cs.id} value={cs.id}>
-                      {cs.city_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Language <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="language"
-                  value={formData.language}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {languages.map((lg) => (
-                    <option key={lg.id} value={lg.id}>
-                      {lg.language_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Business Area <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="business_area"
-                  value={formData.business_area}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {businessareas.map((ba) => (
-                    <option key={ba.id} value={ba.id}>
-                      {ba.business_area}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Business Sector <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="business_sector"
-                  value={formData.business_sector}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {businesssectors.map((bs) => (
-                    <option key={bs.id} value={bs.id}>
-                      {bs.business_sector}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Status</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {statuses.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.status}
+                  {companies.map((cp) => (
+                    <option key={cp.id} value={cp.id}>
+                      {cp.company_code} - {cp.company_name}
                     </option>
                   ))}
                 </select>
@@ -1285,7 +1289,7 @@ const ViewCompany = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCompanies([]);
+                  if (isBulkDelete) setSelectedVendorMaterials([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -1301,4 +1305,4 @@ const ViewCompany = () => {
   );
 };
 
-export default ViewCompany;
+export default ViewVendorKYC;
