@@ -18,6 +18,8 @@ import CreateVendorMaterial from "./pages/admin/vendors/CreateVendorMaterial";
 import ViewVendorMaterials from "./pages/admin/vendors/ViewVendorMaterials";
 import CreateVendorDeclaration from "./pages/admin/vendors/CreateVendorDeclaration";
 import ViewVendorDeclarations from "./pages/admin/vendors/ViewVendorDeclarations";
+import CreateVendorQuotation from "./pages/admin/vendors/CreateVendorQuotation";
+import ViewVendorQuotations from "./pages/admin/vendors/ViewVendorQuotations";
 
 function App() {
   return (
@@ -56,6 +58,14 @@ function App() {
         <Route
           path="/admin/vendor-declarations/view"
           element={<ViewVendorDeclarations />}
+        />
+        <Route
+          path="/admin/vendor-quotation/create"
+          element={<CreateVendorQuotation />}
+        />
+        <Route
+          path="/admin/vendor-quotations/view"
+          element={<ViewVendorQuotations />}
         />
 
         {/* Materials */}

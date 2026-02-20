@@ -7,6 +7,7 @@ import vendorTypesReducer from "./slices/vendorTypesSlice";
 import vendorReducer from "./slices/vendorSlice";
 import vendorMaterialReducer from "./slices/vendorMaterialSlice";
 import vendorDeclarationReducer from "./slices/vendorDeclarationSlice";
+import vendorQuotationReducer from "./slices/vendorQuotationSlice";
 
 const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ const store = configureStore({
     vendors: vendorReducer,
     vendorMaterials: vendorMaterialReducer,
     vendorDeclarations: vendorDeclarationReducer,
+    vendorQuotations: vendorQuotationReducer,
   },
 });
 

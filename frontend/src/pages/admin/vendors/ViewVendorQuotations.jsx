@@ -16,23 +16,24 @@ import {
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchVenderDeclarations,
-  updateVenderDeclaration,
-  deleteVenderDeclaration,
+  fetchVenderQuotations,
+  updateVenderQuotation,
+  deleteVenderQuotation,
   fetchVenders,
   fetchUsers,
   fetchCompanies,
-} from "../../../store/slices/vendorDeclarationSlice";
+} from "../../../store/slices/vendorQuotationSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import api from "../../../utils/api";
 import dayjs from "dayjs";
 
-const ViewVendorDeclarations = () => {
+const ViewVendorQuotations = () => {
   const dispatch = useDispatch();
-  const { vendors, users, companies, vendorDeclarations, loading } =
-    useSelector((state) => state.vendorDeclarations);
+  const { vendors, users, companies, vendorQuotations, loading } = useSelector(
+    (state) => state.vendorQuotations,
+  );
 
-  const signatureRef = useRef(null);
+  const quotationRef = useRef(null);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,16 +41,14 @@ const ViewVendorDeclarations = () => {
   const rowsPerPage = 7;
 
   useEffect(() => {
-    dispatch(fetchVenderDeclarations());
+    dispatch(fetchVenderQuotations());
     dispatch(fetchVenders());
     dispatch(fetchUsers());
     dispatch(fetchCompanies());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedVendorDeclarations, setSelectedVendorDeclarations] = useState(
-    [],
-  );
+  const [selectedVendorQuotations, setSelectedVendorQuotations] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -65,26 +64,25 @@ const ViewVendorDeclarations = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedVendorDeclaration, setSelectedVendorDeclaration] =
-    useState(null);
+  const [selectedVendorQuotation, setSelectedVendorQuotation] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
     vendor: "",
-    declared_by_name: "",
-    declared_by_designation: "",
-    place: "",
-    declaration_date: "",
-    signature: null,
-    accepted: "",
+    quotation_number: "",
+    quotation: null,
+    date_of_quotation: "",
+    quantity: "",
+    lead_time_days: "",
+    is_validated: "",
     creator: "",
     company: "",
   });
 
   const [existingFiles, setExistingFiles] = useState({
-    signature: "",
+    quotation: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -122,10 +120,10 @@ const ViewVendorDeclarations = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedVendorDeclarations.length > 0) {
+      if (isBulkDelete && selectedVendorQuotations.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedVendorDeclarations),
-          fullLabel: selectedVendorDeclarations.join(", "),
+          label: formatIdsWithEllipsis(selectedVendorQuotations),
+          fullLabel: selectedVendorQuotations.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -163,8 +161,8 @@ const ViewVendorDeclarations = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedVendorDeclaration?.id) {
-      updateBreadcrumbs("View", selectedVendorDeclaration.id);
+    } else if (showConfirm && selectedVendorQuotation?.id) {
+      updateBreadcrumbs("View", selectedVendorQuotation.id);
     } else {
       updateBreadcrumbs();
     }
@@ -173,9 +171,9 @@ const ViewVendorDeclarations = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedVendorDeclarations,
+    selectedVendorQuotations,
     editId,
-    selectedVendorDeclaration,
+    selectedVendorQuotation,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -196,18 +194,18 @@ const ViewVendorDeclarations = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSignatureChange = () => {
-    const file = signatureRef.current?.files?.[0];
+  const handleQuotationChange = () => {
+    const file = quotationRef.current?.files?.[0];
     if (!file) return;
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
-      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      signatureRef.current.value = "";
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      quotationRef.current.value = "";
       return;
     }
     setFormData((prev) => ({
       ...prev,
-      signature: file,
+      quotation: file,
     }));
   };
 
@@ -215,18 +213,22 @@ const ViewVendorDeclarations = () => {
     setEditId(vendor.id);
     setFormData({
       vendor: vendor.vendor?.id || "",
-      declared_by_name: vendor.declared_by_name || "",
-      declared_by_designation: vendor.declared_by_designation || "",
-      place: vendor.place || "",
-      declaration_date: vendor.declaration_date || "",
-      signature: null,
-      accepted:
-        vendor.accepted === null ? "" : vendor.accepted ? "true" : "false",
+      quotation_number: vendor.quotation_number || "",
+      quotation: null,
+      date_of_quotation: vendor.date_of_quotation || "",
+      quantity: vendor.quantity || "",
+      lead_time_days: vendor.lead_time_days || "",
+      is_validated:
+        vendor.is_validated === null
+          ? ""
+          : vendor.is_validated
+            ? "true"
+            : "false",
       creator: vendor.creator?.id || "",
       company: vendor.company?.id || "",
     });
     setExistingFiles({
-      signature: vendor.signature || "",
+      quotation: vendor.quotation || "",
     });
 
     setShowEditModal(true);
@@ -238,9 +240,9 @@ const ViewVendorDeclarations = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (key === "signature") {
-        if (formData.signature instanceof File) {
-          data.append("signature", formData.signature);
+      if (key === "quotation") {
+        if (formData.quotation instanceof File) {
+          data.append("quotation", formData.quotation);
         }
       } else {
         if (formData[key] !== undefined && formData[key] !== null) {
@@ -251,10 +253,10 @@ const ViewVendorDeclarations = () => {
 
     if (
       !formData.vendor ||
-      !formData.declared_by_name ||
-      !formData.declared_by_designation ||
-      !formData.place ||
-      !formData.declaration_date ||
+      !formData.quotation_number ||
+      !formData.date_of_quotation ||
+      !formData.quantity ||
+      !formData.lead_time_days ||
       !formData.creator ||
       !formData.company
     ) {
@@ -265,16 +267,16 @@ const ViewVendorDeclarations = () => {
 
     try {
       const res = await dispatch(
-        updateVenderDeclaration({ id: editId, formData: data }),
+        updateVenderQuotation({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
         showTemporaryMessage(
-          "Vendor Declaration updated successfully!",
+          "Vendor Quotation updated successfully!",
           "success",
         );
       } else if (res.status === 202) {
-        showTemporaryMessage("Vendor Declaration update accepted!", "success");
+        showTemporaryMessage("Vendor Quotation update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -308,7 +310,7 @@ const ViewVendorDeclarations = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update vendor declaration!", "error");
+        showTemporaryMessage("Failed to update vendor quotation!", "error");
       }
     }
   };
@@ -319,16 +321,16 @@ const ViewVendorDeclarations = () => {
 
     setFormData({
       vendor: "",
-      declared_by_name: "",
-      declared_by_designation: "",
-      place: "",
-      declaration_date: "",
-      signature: null,
-      accepted: "",
+      quotation_number: "",
+      quotation: null,
+      date_of_quotation: "",
+      quantity: "",
+      lead_time_days: "",
+      is_validated: "",
       creator: "",
       company: "",
     });
-    setExistingFiles({ signature: "" });
+    setExistingFiles({ quotation: "" });
   };
 
   // ----------------- Delete handlers -----------------
@@ -339,46 +341,40 @@ const ViewVendorDeclarations = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedVendorDeclarations.length === 0) return;
+    if (selectedVendorQuotations.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedVendorDeclarations.length > 0) {
+      if (isBulkDelete && selectedVendorQuotations.length > 0) {
         const res = await Promise.all(
-          selectedVendorDeclarations.map((id) =>
-            dispatch(deleteVenderDeclaration(id)).unwrap(),
+          selectedVendorQuotations.map((id) =>
+            dispatch(deleteVenderQuotation(id)).unwrap(),
           ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
           showTemporaryMessage(
-            "Vendor Declaration deleted successfully!",
+            "Vendor Quotation deleted successfully!",
             "success",
           );
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage(
-            "Vendor Declaration delete accepted!",
-            "success",
-          );
+          showTemporaryMessage("Vendor Quotation delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedVendorDeclarations([]);
+        setSelectedVendorQuotations([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteVenderDeclaration(deleteId)).unwrap();
+        const res = await dispatch(deleteVenderQuotation(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
           showTemporaryMessage(
-            "Vendor Declaration deleted successfully!",
+            "Vendor Quotation deleted successfully!",
             "success",
           );
         } else if (res.status === 202) {
-          showTemporaryMessage(
-            "Vendor Declaration delete accepted!",
-            "success",
-          );
+          showTemporaryMessage("Vendor Quotation delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -414,24 +410,24 @@ const ViewVendorDeclarations = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete vendor declaration!", "error");
+        showTemporaryMessage("Failed to delete vendor quotation!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredVendorDeclarations = vendorDeclarations.filter((vendor) => {
+  const filteredVendorQuotations = vendorQuotations.filter((vendor) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
     let activeText = "";
-    if (vendor?.accepted === true) activeText = "yes";
-    else if (vendor?.accepted === false) activeText = "no";
+    if (vendor?.is_validated === true) activeText = "yes";
+    else if (vendor?.is_validated === false) activeText = "no";
     return (
       normalize(vendor?.vendor?.vendor_name).includes(search) ||
       normalize(
-        vendor?.declaration_date
-          ? dayjs(vendor.declaration_date).format("DD-MM-YYYY")
+        vendor?.date_of_quotation
+          ? dayjs(vendor.date_of_quotation).format("DD-MM-YYYY")
           : "--",
       ).includes(search) ||
       normalize(vendor?.creator?.username).includes(search) ||
@@ -441,9 +437,9 @@ const ViewVendorDeclarations = () => {
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredVendorDeclarations.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendorQuotations.length / rowsPerPage);
 
-  const paginatedVendorDeclarations = filteredVendorDeclarations.slice(
+  const paginatedVendorQuotations = filteredVendorQuotations.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -518,7 +514,7 @@ const ViewVendorDeclarations = () => {
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
               <h1 className="text-lg font-bold text-gray-800">
-                View Vendor Declarations
+                View Vendor Quotations
               </h1>
             </div>
             {/* Right Section */}
@@ -536,20 +532,20 @@ const ViewVendorDeclarations = () => {
               </div>
 
               <Link
-                to="/admin/vendor-declaration/create"
+                to="/admin/vendor-quotation/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Vendor Declaration
+                <FiPlus /> Create Vendor Quotation
               </Link>
 
-              {selectedVendorDeclarations.length > 1 && (
+              {selectedVendorQuotations.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedVendorDeclarations.length}
+                    {selectedVendorQuotations.length}
                   </span>
                 </button>
               )}
@@ -565,20 +561,20 @@ const ViewVendorDeclarations = () => {
                 <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredVendorDeclarations.length <= 1 ? (
+                      {filteredVendorQuotations.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredVendorDeclarations.length > 1 &&
-                            selectedVendorDeclarations.length ===
-                              filteredVendorDeclarations.length
+                            filteredVendorQuotations.length > 1 &&
+                            selectedVendorQuotations.length ===
+                              filteredVendorQuotations.length
                           }
                           onChange={(e) =>
-                            setSelectedVendorDeclarations(
+                            setSelectedVendorQuotations(
                               e.target.checked
-                                ? filteredVendorDeclarations.map(
+                                ? filteredVendorQuotations.map(
                                     (vendor) => vendor.id,
                                   )
                                 : [],
@@ -593,7 +589,7 @@ const ViewVendorDeclarations = () => {
                       "DATE",
                       "CREATOR",
                       "COMPANY",
-                      "ACCEPTED",
+                      "VALIDATED",
                       "ACTIONS",
                     ].map((label, idx) => (
                       <th
@@ -618,8 +614,8 @@ const ViewVendorDeclarations = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredVendorDeclarations.length > 0 ? (
-                    paginatedVendorDeclarations.map((vendor) => (
+                  ) : filteredVendorQuotations.length > 0 ? (
+                    paginatedVendorQuotations.map((vendor) => (
                       <tr
                         key={vendor.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
@@ -627,11 +623,11 @@ const ViewVendorDeclarations = () => {
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedVendorDeclarations.includes(
+                            checked={selectedVendorQuotations.includes(
                               vendor.id,
                             )}
                             onChange={() =>
-                              setSelectedVendorDeclarations((prev) =>
+                              setSelectedVendorQuotations((prev) =>
                                 prev.includes(vendor.id)
                                   ? prev.filter((x) => x !== vendor.id)
                                   : [...prev, vendor.id],
@@ -644,8 +640,8 @@ const ViewVendorDeclarations = () => {
                           {vendor?.vendor?.vendor_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.declaration_date
-                            ? dayjs(vendor.declaration_date).format(
+                          {vendor?.date_of_quotation
+                            ? dayjs(vendor.date_of_quotation).format(
                                 "DD-MM-YYYY",
                               )
                             : "--"}
@@ -657,17 +653,17 @@ const ViewVendorDeclarations = () => {
                           {vendor?.company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.accepted == null ? (
+                          {vendor?.is_validated == null ? (
                             "--"
                           ) : (
                             <span
                               className={
-                                vendor?.accepted
+                                vendor?.is_validated
                                   ? "text-green-600"
                                   : "text-red-500"
                               }
                             >
-                              {vendor?.accepted ? "Yes" : "No"}
+                              {vendor?.is_validated ? "Yes" : "No"}
                             </span>
                           )}
                         </td>
@@ -682,7 +678,7 @@ const ViewVendorDeclarations = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedVendorDeclaration(vendor);
+                                setSelectedVendorQuotation(vendor);
                                 updateBreadcrumbs("View", vendor.id);
                                 setShowConfirm(true);
                               }}
@@ -708,7 +704,7 @@ const ViewVendorDeclarations = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
-                        No vendor materials found!
+                        No vendor quotations found!
                       </td>
                     </tr>
                   )}
@@ -782,14 +778,14 @@ const ViewVendorDeclarations = () => {
       </main>
 
       {/* Confirmation Modal */}
-      {showConfirm && selectedVendorDeclaration && (
+      {showConfirm && selectedVendorQuotation && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Vendor Declaration
+                  View Vendor Quotation
                 </h2>
               </div>
 
@@ -810,32 +806,36 @@ const ViewVendorDeclarations = () => {
                       Vendor:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.vendor?.vendor_name || "--"}
+                      {selectedVendorQuotation?.vendor?.vendor_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Name:
+                      Quotation Number:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.declared_by_name || "--"}
+                      {selectedVendorQuotation?.quotation_number || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Designation:
+                      Quotation:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.declared_by_designation ||
-                        "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Place:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.place || "--"}
+                      {selectedVendorQuotation.quotation && (
+                        <a
+                          href={
+                            selectedVendorQuotation.quotation.startsWith("http")
+                              ? selectedVendorQuotation.quotation
+                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedVendorQuotation.quotation}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-400"
+                        >
+                          {selectedVendorQuotation.quotation.split("/").pop()}
+                        </a>
+                      )}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -843,53 +843,46 @@ const ViewVendorDeclarations = () => {
                       Date:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.declaration_date
+                      {selectedVendorQuotation?.date_of_quotation
                         ? dayjs(
-                            selectedVendorDeclaration.declaration_date,
+                            selectedVendorQuotation.date_of_quotation,
                           ).format("DD-MM-YYYY")
                         : "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Accepted:
+                      Quantity:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.accepted == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedVendorDeclaration?.accepted
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedVendorDeclaration?.accepted ? "Yes" : "No"}
-                        </span>
-                      )}
+                      {selectedVendorQuotation?.quantity || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Signature:
+                      Lead Time:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration.signature && (
-                        <a
-                          href={
-                            selectedVendorDeclaration.signature.startsWith(
-                              "http",
-                            )
-                              ? selectedVendorDeclaration.signature
-                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedVendorDeclaration.signature}`
+                      {selectedVendorQuotation?.lead_time_days || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Validated:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorQuotation?.is_validated == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorQuotation?.is_validated
+                              ? "text-green-600"
+                              : "text-red-500"
                           }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-amber-400"
                         >
-                          {selectedVendorDeclaration.signature.split("/").pop()}
-                        </a>
+                          {selectedVendorQuotation?.is_validated ? "Yes" : "No"}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -898,7 +891,7 @@ const ViewVendorDeclarations = () => {
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.creator?.username || "--"}
+                      {selectedVendorQuotation?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -906,7 +899,7 @@ const ViewVendorDeclarations = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.company?.company_name || "--"}
+                      {selectedVendorQuotation?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -914,8 +907,8 @@ const ViewVendorDeclarations = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.created_at
-                        ? dayjs(selectedVendorDeclaration?.created_at).format(
+                      {selectedVendorQuotation?.created_at
+                        ? dayjs(selectedVendorQuotation?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -926,8 +919,8 @@ const ViewVendorDeclarations = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorDeclaration?.updated_at
-                        ? dayjs(selectedVendorDeclaration?.updated_at).format(
+                      {selectedVendorQuotation?.updated_at
+                        ? dayjs(selectedVendorQuotation?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -948,7 +941,7 @@ const ViewVendorDeclarations = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Vendor Declaration
+                  Change Vendor Quotation
                 </h2>
               </div>
               <button
@@ -980,42 +973,43 @@ const ViewVendorDeclarations = () => {
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Name <span className="text-red-500">*</span>
+                  Quotation Number <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="declared_by_name"
-                  placeholder="Enter Name"
-                  value={formData.declared_by_name}
+                  name="quotation_number"
+                  placeholder="Enter Quotation Number"
+                  value={formData.quotation_number}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col col-span-2">
                 <label className="form-label">
-                  Designation <span className="text-red-500">*</span>
+                  Quotation <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  name="declared_by_designation"
-                  placeholder="Enter Designation"
-                  value={formData.declared_by_designation}
-                  onChange={handleChange}
+                  type="file"
+                  name="quotation"
+                  accept="application/pdf"
+                  ref={quotationRef}
+                  onChange={handleQuotationChange}
                   className="form-input"
                 />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Place <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="place"
-                  placeholder="Enter Place"
-                  value={formData.place}
-                  onChange={handleChange}
-                  className="form-input"
-                />
+                {existingFiles.quotation && (
+                  <a
+                    href={
+                      existingFiles.quotation.startsWith("http")
+                        ? existingFiles.quotation
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.quotation}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400"
+                  >
+                    {existingFiles.quotation.split("/").pop()}
+                  </a>
+                )}
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
@@ -1023,17 +1017,70 @@ const ViewVendorDeclarations = () => {
                 </label>
                 <input
                   type="date"
-                  name="declaration_date"
-                  value={formData.declaration_date}
+                  name="date_of_quotation"
+                  value={formData.date_of_quotation}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Accepted</label>
+                <label className="form-label">
+                  Quantity <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  placeholder="Enter Quantity"
+                  value={formData.quantity}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const regex = /^\d*(\.\d{0,3})?$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  step="0.001"
+                  inputMode="decimal"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Lead Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="lead_time_days"
+                  placeholder="Enter Lead Time (Days)"
+                  value={formData.lead_time_days}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E", "."].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    const regex = /^\d*$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  inputMode="numeric"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Validated</label>
                 <select
-                  name="accepted"
-                  value={formData.accepted}
+                  name="is_validated"
+                  value={formData.is_validated}
                   onChange={handleChange}
                   className="form-input"
                 >
@@ -1041,31 +1088,6 @@ const ViewVendorDeclarations = () => {
                   <option value="true">Yes</option>
                   <option value="false">No</option>
                 </select>
-              </div>
-              <div className="flex flex-col col-span-2">
-                <label className="form-label">Signature</label>
-                <input
-                  type="file"
-                  name="signature"
-                  accept="image/png, image/jpeg"
-                  ref={signatureRef}
-                  onChange={handleSignatureChange}
-                  className="form-input"
-                />
-                {existingFiles.signature && (
-                  <a
-                    href={
-                      existingFiles.signature.startsWith("http")
-                        ? existingFiles.signature
-                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.signature}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-amber-400"
-                  >
-                    {existingFiles.signature.split("/").pop()}
-                  </a>
-                )}
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
@@ -1142,7 +1164,7 @@ const ViewVendorDeclarations = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedVendorDeclarations([]);
+                  if (isBulkDelete) setSelectedVendorQuotations([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -1158,4 +1180,4 @@ const ViewVendorDeclarations = () => {
   );
 };
 
-export default ViewVendorDeclarations;
+export default ViewVendorQuotations;

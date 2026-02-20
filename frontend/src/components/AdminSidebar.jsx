@@ -263,13 +263,6 @@ const AdminSidebar = () => {
                 )} */}
 
                 <button
-                  className="flex items-center w-full px-4 py-2 text-sm font-semibold border-b border-gray-300 cursor-pointer"
-                  onClick={() => navigate("/admin/settings")}
-                >
-                  <FiIcons.FiSettings className="mr-2" /> Settings
-                </button>
-
-                <button
                   className="flex items-center w-full px-4 py-2 text-sm font-semibold cursor-pointer"
                   onClick={() => setShowLogoutPopup(true)}
                 >
