@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminSidebar from "../../../components/AdminSidebar";
 import { useLocation, useNavigate } from "react-router-dom";
 import mainConfig from "../../../config/mainConfig";
@@ -27,6 +27,10 @@ const CreateVendorKYC = () => {
     users,
     companies,
   } = useSelector((state) => state.vendorKYC);
+
+  const taxcertificateRef = useRef(null);
+  const msmecertificateRef = useRef(null);
+  const bankproofRef = useRef(null);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [actionType, setActionType] = useState("");
@@ -140,6 +144,39 @@ const CreateVendorKYC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleTaxCertificateChange = () => {
+    const file = taxcertificateRef.current?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      taxcertificateRef.current.value = "";
+      return;
+    }
+  };
+
+  const handleMsmeCertificateChange = () => {
+    const file = msmecertificateRef.current?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      msmecertificateRef.current.value = "";
+      return;
+    }
+  };
+
+  const handleBankProofChange = () => {
+    const file = bankproofRef.current?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      bankproofRef.current.value = "";
+      return;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionType("Save");
@@ -174,6 +211,21 @@ const CreateVendorKYC = () => {
         submitData.append(key, formData[key]);
       }
     });
+
+    const taxfile = taxcertificateRef.current?.files?.[0];
+    if (taxfile) {
+      submitData.append("tax_certificate", taxfile);
+    }
+
+    const msmefile = msmecertificateRef.current?.files?.[0];
+    if (msmefile) {
+      submitData.append("msme_certificate", msmefile);
+    }
+
+    const bankprooffile = bankproofRef.current?.files?.[0];
+    if (bankprooffile) {
+      submitData.append("bank_proof", bankprooffile);
+    }
 
     try {
       const res = await dispatch(createVenderKYC(submitData)).unwrap();
@@ -225,8 +277,82 @@ const CreateVendorKYC = () => {
         creator: "",
         company: "",
       });
+      if (taxcertificateRef.current) {
+        taxcertificateRef.current.value = "";
+      }
+      if (msmecertificateRef.current) {
+        msmecertificateRef.current.value = "";
+      }
+      if (bankproofRef.current) {
+        bankproofRef.current.value = "";
+      }
     } catch (error) {
       console.log("Error:", error);
+
+      /* ================= HANDLE DUPLICATE VENDOR ================= */
+      const backendErrorString =
+        error?.data?.error || JSON.stringify(error?.data || "");
+
+      if (
+        typeof backendErrorString === "string" &&
+        backendErrorString.toLowerCase().includes("already exists")
+      ) {
+        showTemporaryMessage(
+          "Vendor KYC for this vendor already exists!",
+          "error",
+        );
+        setFormData({
+          vendor: "",
+          payment_terms: "",
+          credit_days: "",
+          credit_limit: "",
+          legal_name: "",
+          trade_name: "",
+          vendor_type: "",
+          registration_number: "",
+          incorporation_date: "",
+          country_of_registration: "",
+          tax_id: "",
+          vat_number: "",
+          tax_certificate: null,
+          is_msme: "",
+          msme_certificate: null,
+          bank_name: "",
+          account_holder_name: "",
+          account_number: "",
+          ifsc_swift_code: "",
+          bank_branch: "",
+          bank_proof: null,
+          registered_address: "",
+          operational_address: "",
+          official_email: "",
+          phone_number: "",
+          signatory_name: "",
+          signatory_designation: "",
+          signatory_email: "",
+          signatory_phone: "",
+          nda_signed: "",
+          contract_signed: "",
+          is_blacklisted: "",
+          risk_rating: "",
+          kyc_status: "",
+          approved_at: "",
+          approved_by: "",
+          creator: "",
+          company: "",
+        });
+        if (taxcertificateRef.current) {
+          taxcertificateRef.current.value = "";
+        }
+        if (msmecertificateRef.current) {
+          msmecertificateRef.current.value = "";
+        }
+        if (bankproofRef.current) {
+          bankproofRef.current.value = "";
+        }
+        setTimeout(() => setActionType(""), 3000);
+        return;
+      }
 
       let errorMessages = [];
 
@@ -357,8 +483,7 @@ const CreateVendorKYC = () => {
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Payment Terms{" "}
-                            <span className="text-red-500">*</span>
+                            Payment Terms
                           </label>
                           <input
                             type="text"
@@ -437,7 +562,7 @@ const CreateVendorKYC = () => {
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Trade Name <span className="text-red-500">*</span>
+                            Trade Name
                           </label>
                           <input
                             type="text"
@@ -447,6 +572,447 @@ const CreateVendorKYC = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Vendor Type
+                          </label>
+                          <select
+                            name="vendor_type"
+                            value={formData.vendor_type}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            {vendortypes.map((vt) => (
+                              <option key={vt.id} value={vt.id}>
+                                {vt.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Registration Number{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="registration_number"
+                            placeholder="Enter Registration Number"
+                            value={formData.registration_number}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Incorporation Date
+                          </label>
+                          <input
+                            type="date"
+                            name="incorporation_date"
+                            value={formData.incorporation_date}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Country of Registration
+                          </label>
+                          <select
+                            name="country_of_registration"
+                            value={formData.country_of_registration}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            {countries.map((cs) => (
+                              <option key={cs.id} value={cs.id}>
+                                {cs.country_code} - {cs.country_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Tax ID
+                          </label>
+                          <input
+                            type="text"
+                            name="tax_id"
+                            placeholder="Enter Tax ID"
+                            value={formData.tax_id}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            VAT Number
+                          </label>
+                          <input
+                            type="text"
+                            name="vat_number"
+                            placeholder="Enter VAT Number"
+                            value={formData.vat_number}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Tax Certificate
+                          </label>
+                          <input
+                            type="file"
+                            name="tax_certificate"
+                            accept="application/pdf"
+                            ref={taxcertificateRef}
+                            onChange={handleTaxCertificateChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            MSME
+                          </label>
+                          <select
+                            name="is_msme"
+                            value={formData.is_msme}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            MSME Certificate
+                          </label>
+                          <input
+                            type="file"
+                            name="msme_certificate"
+                            accept="application/pdf"
+                            ref={msmecertificateRef}
+                            onChange={handleMsmeCertificateChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Bank Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bank_name"
+                            placeholder="Enter Bank Name"
+                            value={formData.bank_name}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Account Holder Name{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="account_holder_name"
+                            placeholder="Enter Account Holder Name"
+                            value={formData.account_holder_name}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Account Number{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="account_number"
+                            placeholder="Enter Account Number"
+                            value={formData.account_number}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            IFSC <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="ifsc_swift_code"
+                            placeholder="Enter IFSC"
+                            value={formData.ifsc_swift_code}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Branch
+                          </label>
+                          <input
+                            type="text"
+                            name="bank_branch"
+                            placeholder="Enter Branch"
+                            value={formData.bank_branch}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Bank Proof
+                          </label>
+                          <input
+                            type="file"
+                            name="bank_proof"
+                            accept="application/pdf"
+                            ref={bankproofRef}
+                            onChange={handleBankProofChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            KYC Status
+                          </label>
+                          <select
+                            name="kyc_status"
+                            value={formData.kyc_status}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            {kycstatus.map((kyc) => (
+                              <option key={kyc.id} value={kyc.id}>
+                                {kyc.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-start col-span-2">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Registered Address{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            name="registered_address"
+                            value={formData.registered_address}
+                            onChange={handleChange}
+                            rows={2}
+                            className="flex-1 w-full textarea-input"
+                            placeholder="Enter registered address..."
+                          ></textarea>
+                        </div>
+                        <div className="flex items-start col-span-2">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Operational Address
+                          </label>
+                          <textarea
+                            name="operational_address"
+                            value={formData.operational_address}
+                            onChange={handleChange}
+                            rows={2}
+                            className="flex-1 w-full textarea-input"
+                            placeholder="Enter operational address..."
+                          ></textarea>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Official Email ID{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            name="official_email"
+                            placeholder="Enter Official Email ID"
+                            value={formData.official_email}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Mobile No <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="phone_number"
+                            placeholder="Enter Mobile No"
+                            value={formData.phone_number}
+                            onChange={(e) => {
+                              const regex = /^[0-9]*$/;
+                              if (regex.test(e.target.value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            maxLength={10}
+                            pattern="[0-9]*"
+                            inputMode="numeric"
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Signatory Name{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="signatory_name"
+                            placeholder="Enter Signatory Name"
+                            value={formData.signatory_name}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Signatory Designation{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="signatory_designation"
+                            placeholder="Enter Signatory Designation"
+                            value={formData.signatory_designation}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Signatory Email ID{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            name="signatory_email"
+                            placeholder="Enter Signatory Email ID"
+                            value={formData.signatory_email}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Signatory Mobile No{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="signatory_phone"
+                            placeholder="Enter Signatory Mobile No"
+                            value={formData.signatory_phone}
+                            onChange={(e) => {
+                              const regex = /^[0-9]*$/;
+                              if (regex.test(e.target.value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            maxLength={10}
+                            pattern="[0-9]*"
+                            inputMode="numeric"
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            NDA Signed
+                          </label>
+                          <select
+                            name="nda_signed"
+                            value={formData.nda_signed}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Contract Signed
+                          </label>
+                          <select
+                            name="contract_signed"
+                            value={formData.contract_signed}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Blacklisted
+                          </label>
+                          <select
+                            name="is_blacklisted"
+                            value={formData.is_blacklisted}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Risk Rating
+                          </label>
+                          <input
+                            type="text"
+                            name="risk_rating"
+                            placeholder="Enter Risk Rating"
+                            value={formData.risk_rating}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Approved At
+                          </label>
+                          <input
+                            type="datetime-local"
+                            name="approved_at"
+                            value={formData.approved_at}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            Approved By
+                          </label>
+                          <select
+                            name="approved_by"
+                            value={formData.approved_by}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            {approvedby.map((apby) => (
+                              <option key={apby.id} value={apby.id}>
+                                {apby.username} - {apby.email}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
@@ -16,15 +16,17 @@ import {
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchVenderMaterials,
-  updateVenderMaterial,
-  deleteVenderMaterial,
+  fetchVenderKYC,
+  updateVenderKYC,
+  deleteVenderKYC,
   fetchVenders,
-  fetchMaterials,
-  fetchUnitOfMeasurements,
+  fetchVenderTypes,
+  fetchCountries,
+  fetchKYCStatus,
+  fetchApprovedBy,
   fetchUsers,
   fetchCompanies,
-} from "../../../store/slices/vendorMaterialSlice";
+} from "../../../store/slices/vendorKYCSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
 
@@ -32,13 +34,19 @@ const ViewVendorKYC = () => {
   const dispatch = useDispatch();
   const {
     vendors,
-    materials,
-    uoms,
+    vendortypes,
+    countries,
+    kycstatus,
+    approvedby,
     users,
     companies,
-    vendorMaterials,
+    vendorKYC,
     loading,
-  } = useSelector((state) => state.vendorMaterials);
+  } = useSelector((state) => state.vendorKYC);
+
+  const taxcertificateRef = useRef(null);
+  const msmecertificateRef = useRef(null);
+  const bankproofRef = useRef(null);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,16 +54,18 @@ const ViewVendorKYC = () => {
   const rowsPerPage = 7;
 
   useEffect(() => {
-    dispatch(fetchVenderMaterials());
+    dispatch(fetchVenderKYC());
     dispatch(fetchVenders());
-    dispatch(fetchMaterials());
-    dispatch(fetchUnitOfMeasurements());
+    dispatch(fetchVenderTypes());
+    dispatch(fetchCountries());
+    dispatch(fetchKYCStatus());
+    dispatch(fetchApprovedBy());
     dispatch(fetchUsers());
     dispatch(fetchCompanies());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedVendorMaterials, setSelectedVendorMaterials] = useState([]);
+  const [selectedVendorKYCs, setSelectedVendorKYCs] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -71,26 +81,56 @@ const ViewVendorKYC = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedVendorMaterial, setSelectedVendorMaterial] = useState(null);
+  const [selectedVendorKYC, setSelectedVendorKYC] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
     vendor: "",
-    material: "",
-    purchase_uom: "",
-    price: "",
-    minimum_order_quantity: "",
-    lead_time_days: "",
-    tax_percentage: "",
-    discount_percentage: "",
-    is_preferred: "",
-    is_active: "",
-    valid_from: "",
-    valid_to: "",
+    payment_terms: "",
+    credit_days: "",
+    credit_limit: "",
+    legal_name: "",
+    trade_name: "",
+    vendor_type: "",
+    registration_number: "",
+    incorporation_date: "",
+    country_of_registration: "",
+    tax_id: "",
+    vat_number: "",
+    tax_certificate: null,
+    is_msme: "",
+    msme_certificate: null,
+    bank_name: "",
+    account_holder_name: "",
+    account_number: "",
+    ifsc_swift_code: "",
+    bank_branch: "",
+    bank_proof: null,
+    registered_address: "",
+    operational_address: "",
+    official_email: "",
+    phone_number: "",
+    signatory_name: "",
+    signatory_designation: "",
+    signatory_email: "",
+    signatory_phone: "",
+    nda_signed: "",
+    contract_signed: "",
+    is_blacklisted: "",
+    risk_rating: "",
+    kyc_status: "",
+    approved_at: "",
+    approved_by: "",
     creator: "",
     company: "",
+  });
+
+  const [existingFiles, setExistingFiles] = useState({
+    tax_certificate: "",
+    msme_certificate: "",
+    bank_proof: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -128,10 +168,10 @@ const ViewVendorKYC = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedVendorMaterials.length > 0) {
+      if (isBulkDelete && selectedVendorKYCs.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedVendorMaterials),
-          fullLabel: selectedVendorMaterials.join(", "),
+          label: formatIdsWithEllipsis(selectedVendorKYCs),
+          fullLabel: selectedVendorKYCs.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -169,8 +209,8 @@ const ViewVendorKYC = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedVendorMaterial?.id) {
-      updateBreadcrumbs("View", selectedVendorMaterial.id);
+    } else if (showConfirm && selectedVendorKYC?.id) {
+      updateBreadcrumbs("View", selectedVendorKYC.id);
     } else {
       updateBreadcrumbs();
     }
@@ -179,9 +219,9 @@ const ViewVendorKYC = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedVendorMaterials,
+    selectedVendorKYCs,
     editId,
-    selectedVendorMaterial,
+    selectedVendorKYC,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -202,29 +242,98 @@ const ViewVendorKYC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleTaxCertificateChange = () => {
+    const file = taxcertificateRef.current?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      taxcertificateRef.current.value = "";
+      return;
+    }
+  };
+
+  const handleMsmeCertificateChange = () => {
+    const file = msmecertificateRef.current?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      msmecertificateRef.current.value = "";
+      return;
+    }
+  };
+
+  const handleBankProofChange = () => {
+    const file = bankproofRef.current?.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showTemporaryMessage("Only PDF files are allowed!", "error");
+      bankproofRef.current.value = "";
+      return;
+    }
+  };
+
   const handleOpenEdit = (vendor) => {
     setEditId(vendor.id);
     setFormData({
       vendor: vendor.vendor?.id || "",
-      material: vendor.material?.id || "",
-      purchase_uom: vendor.purchase_uom?.id || "",
-      price: vendor.price || "",
-      minimum_order_quantity: vendor.minimum_order_quantity || "",
-      lead_time_days: vendor.lead_time_days || "",
-      tax_percentage: vendor.tax_percentage || "",
-      discount_percentage: vendor.discount_percentage || "",
-      is_preferred:
-        vendor.is_preferred === null
+      payment_terms: vendor.payment_terms || "",
+      credit_days: vendor.credit_days || "",
+      credit_limit: vendor.credit_limit || "",
+      legal_name: vendor.legal_name || "",
+      trade_name: vendor.trade_name || "",
+      vendor_type: vendor.vendor_type?.id || "",
+      registration_number: vendor.registration_number || "",
+      incorporation_date: vendor.incorporation_date || "",
+      country_of_registration: vendor.country_of_registration?.id || "",
+      tax_id: vendor.tax_id || "",
+      vat_number: vendor.vat_number || "",
+      tax_certificate: null,
+      is_msme: vendor.is_msme === null ? "" : vendor.is_msme ? "true" : "false",
+      msme_certificate: null,
+      bank_name: vendor.bank_name || "",
+      account_holder_name: vendor.account_holder_name || "",
+      account_number: vendor.account_number || "",
+      ifsc_swift_code: vendor.ifsc_swift_code || "",
+      bank_branch: vendor.bank_branch || "",
+      bank_proof: null,
+      registered_address: vendor.registered_address || "",
+      operational_address: vendor.operational_address || "",
+      official_email: vendor.official_email || "",
+      phone_number: vendor.phone_number || "",
+      signatory_name: vendor.signatory_name || "",
+      signatory_designation: vendor.signatory_designation || "",
+      signatory_email: vendor.signatory_email || "",
+      signatory_phone: vendor.signatory_phone || "",
+      nda_signed:
+        vendor.nda_signed === null ? "" : vendor.nda_signed ? "true" : "false",
+      contract_signed:
+        vendor.contract_signed === null
           ? ""
-          : vendor.is_preferred
+          : vendor.contract_signed
             ? "true"
             : "false",
-      is_active:
-        vendor.is_active === null ? "" : vendor.is_active ? "true" : "false",
-      valid_from: vendor.valid_from || "",
-      valid_to: vendor.valid_to || "",
+      is_blacklisted:
+        vendor.is_blacklisted === null
+          ? ""
+          : vendor.is_blacklisted
+            ? "true"
+            : "false",
+      risk_rating: vendor.risk_rating || "",
+      kyc_status: vendor.kyc_status?.id || "",
+      approved_at: vendor.approved_at
+        ? dayjs(vendor.approved_at).format("YYYY-MM-DDTHH:mm")
+        : "",
+      approved_by: vendor.approved_by?.id || "",
       creator: vendor.creator?.id || "",
       company: vendor.company?.id || "",
+    });
+    setExistingFiles({
+      tax_certificate: vendor.tax_certificate || "",
+      msme_certificate: vendor.msme_certificate || "",
+      bank_proof: vendor.bank_proof || "",
     });
 
     setShowEditModal(true);
@@ -247,9 +356,19 @@ const ViewVendorKYC = () => {
 
     if (
       !formData.vendor ||
-      !formData.material ||
-      !formData.purchase_uom ||
-      !formData.price ||
+      !formData.legal_name ||
+      !formData.registration_number ||
+      !formData.bank_name ||
+      !formData.account_holder_name ||
+      !formData.account_number ||
+      !formData.ifsc_swift_code ||
+      !formData.registered_address ||
+      !formData.official_email ||
+      !formData.phone_number ||
+      !formData.signatory_name ||
+      !formData.signatory_designation ||
+      !formData.signatory_email ||
+      !formData.signatory_phone ||
       !formData.creator ||
       !formData.company
     ) {
@@ -260,16 +379,13 @@ const ViewVendorKYC = () => {
 
     try {
       const res = await dispatch(
-        updateVenderMaterial({ id: editId, formData: data }),
+        updateVenderKYC({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage(
-          "Vendor Material updated successfully!",
-          "success",
-        );
+        showTemporaryMessage("Vendor KYC updated successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("Vendor Material update accepted!", "success");
+        showTemporaryMessage("Vendor KYC update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -303,7 +419,7 @@ const ViewVendorKYC = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update vendor material!", "error");
+        showTemporaryMessage("Failed to update vendor KYC!", "error");
       }
     }
   };
@@ -313,15 +429,42 @@ const ViewVendorKYC = () => {
     setEditId(null);
 
     setFormData({
-      name: "",
-      code: "",
-      short_name: "",
-      description: "",
-      is_service_provider: "",
-      is_material_supplier: "",
-      requires_contract: "",
-      is_active: "",
-      sort_order: "",
+      vendor: "",
+      payment_terms: "",
+      credit_days: "",
+      credit_limit: "",
+      legal_name: "",
+      trade_name: "",
+      vendor_type: "",
+      registration_number: "",
+      incorporation_date: "",
+      country_of_registration: "",
+      tax_id: "",
+      vat_number: "",
+      tax_certificate: null,
+      is_msme: "",
+      msme_certificate: null,
+      bank_name: "",
+      account_holder_name: "",
+      account_number: "",
+      ifsc_swift_code: "",
+      bank_branch: "",
+      bank_proof: null,
+      registered_address: "",
+      operational_address: "",
+      official_email: "",
+      phone_number: "",
+      signatory_name: "",
+      signatory_designation: "",
+      signatory_email: "",
+      signatory_phone: "",
+      nda_signed: "",
+      contract_signed: "",
+      is_blacklisted: "",
+      risk_rating: "",
+      kyc_status: "",
+      approved_at: "",
+      approved_by: "",
       creator: "",
       company: "",
     });
@@ -335,40 +478,34 @@ const ViewVendorKYC = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedVendorMaterials.length === 0) return;
+    if (selectedVendorKYCs.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedVendorMaterials.length > 0) {
+      if (isBulkDelete && selectedVendorKYCs.length > 0) {
         const res = await Promise.all(
-          selectedVendorMaterials.map((id) =>
-            dispatch(deleteVenderMaterial(id)).unwrap(),
+          selectedVendorKYCs.map((id) =>
+            dispatch(deleteVenderKYC(id)).unwrap(),
           ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage(
-            "Vendor Material deleted successfully!",
-            "success",
-          );
+          showTemporaryMessage("Vendor KYC deleted successfully!", "success");
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Vendor Material delete accepted!", "success");
+          showTemporaryMessage("Vendor KYC delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedVendorMaterials([]);
+        setSelectedVendorKYCs([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteVenderMaterial(deleteId)).unwrap();
+        const res = await dispatch(deleteVenderKYC(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage(
-            "Vendor Material deleted successfully!",
-            "success",
-          );
+          showTemporaryMessage("Vendor KYC deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("Vendor Material delete accepted!", "success");
+          showTemporaryMessage("Vendor KYC delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -404,32 +541,30 @@ const ViewVendorKYC = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete vendor material!", "error");
+        showTemporaryMessage("Failed to delete vendor KYC!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredVendorMaterials = vendorMaterials.filter((vendor) => {
+  const filteredVendorKYCs = vendorKYC.filter((vendor) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
-    let activeText = "";
-    if (vendor?.is_active === true) activeText = "yes";
-    else if (vendor?.is_active === false) activeText = "no";
+
     return (
       normalize(vendor?.vendor?.vendor_name).includes(search) ||
-      normalize(vendor?.material?.material_name).includes(search) ||
+      normalize(vendor?.vendor_type?.name).includes(search) ||
       normalize(vendor?.creator?.username).includes(search) ||
       normalize(vendor?.company?.company_name).includes(search) ||
-      normalize(activeText).includes(search)
+      normalize(vendor?.kyc_status?.name).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredVendorMaterials.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredVendorKYCs.length / rowsPerPage);
 
-  const paginatedVendorMaterials = filteredVendorMaterials.slice(
+  const paginatedVendorKYCs = filteredVendorKYCs.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -504,7 +639,7 @@ const ViewVendorKYC = () => {
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Vendor Materials
+                View Vendor KYC
               </h2>
             </div>
             {/* Right Section */}
@@ -522,20 +657,20 @@ const ViewVendorKYC = () => {
               </div>
 
               <Link
-                to="/admin/vendor-material/create"
+                to="/admin/vendor-kyc/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Vendor Material
+                <FiPlus /> Create Vendor KYC
               </Link>
 
-              {selectedVendorMaterials.length > 1 && (
+              {selectedVendorKYCs.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedVendorMaterials.length}
+                    {selectedVendorKYCs.length}
                   </span>
                 </button>
               )}
@@ -551,22 +686,20 @@ const ViewVendorKYC = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredVendorMaterials.length <= 1 ? (
+                      {filteredVendorKYCs.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredVendorMaterials.length > 1 &&
-                            selectedVendorMaterials.length ===
-                              filteredVendorMaterials.length
+                            filteredVendorKYCs.length > 1 &&
+                            selectedVendorKYCs.length ===
+                              filteredVendorKYCs.length
                           }
                           onChange={(e) =>
-                            setSelectedVendorMaterials(
+                            setSelectedVendorKYCs(
                               e.target.checked
-                                ? filteredVendorMaterials.map(
-                                    (vendor) => vendor.id,
-                                  )
+                                ? filteredVendorKYCs.map((vendor) => vendor.id)
                                 : [],
                             )
                           }
@@ -576,10 +709,10 @@ const ViewVendorKYC = () => {
                     </th>
                     {[
                       "VENDOR NAME",
-                      "MATERIAL NAME",
+                      "VENDOR TYPE",
                       "CREATOR",
                       "COMPANY",
-                      "ACTIVE",
+                      "STATUS",
                       "ACTIONS",
                     ].map((label, idx) => (
                       <th
@@ -604,8 +737,8 @@ const ViewVendorKYC = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredVendorMaterials.length > 0 ? (
-                    paginatedVendorMaterials.map((vendor) => (
+                  ) : filteredVendorKYCs.length > 0 ? (
+                    paginatedVendorKYCs.map((vendor) => (
                       <tr
                         key={vendor.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
@@ -613,11 +746,9 @@ const ViewVendorKYC = () => {
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedVendorMaterials.includes(
-                              vendor.id,
-                            )}
+                            checked={selectedVendorKYCs.includes(vendor.id)}
                             onChange={() =>
-                              setSelectedVendorMaterials((prev) =>
+                              setSelectedVendorKYCs((prev) =>
                                 prev.includes(vendor.id)
                                   ? prev.filter((x) => x !== vendor.id)
                                   : [...prev, vendor.id],
@@ -630,7 +761,7 @@ const ViewVendorKYC = () => {
                           {vendor?.vendor?.vendor_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.material?.material_name || "--"}
+                          {vendor?.vendor_type?.name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           {vendor?.creator?.username || "--"}
@@ -639,19 +770,7 @@ const ViewVendorKYC = () => {
                           {vendor?.company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {vendor?.is_active == null ? (
-                            "--"
-                          ) : (
-                            <span
-                              className={
-                                vendor?.is_active
-                                  ? "text-green-600"
-                                  : "text-red-500"
-                              }
-                            >
-                              {vendor?.is_active ? "Yes" : "No"}
-                            </span>
-                          )}
+                          {vendor?.kyc_status?.name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
@@ -664,7 +783,7 @@ const ViewVendorKYC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedVendorMaterial(vendor);
+                                setSelectedVendorKYC(vendor);
                                 updateBreadcrumbs("View", vendor.id);
                                 setShowConfirm(true);
                               }}
@@ -690,7 +809,7 @@ const ViewVendorKYC = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-300 whitespace-nowrap"
                       >
-                        No vendor materials found!
+                        No vendor KYC found!
                       </td>
                     </tr>
                   )}
@@ -764,14 +883,14 @@ const ViewVendorKYC = () => {
       </main>
 
       {/* Confirmation Modal */}
-      {showConfirm && selectedVendorMaterial && (
+      {showConfirm && selectedVendorKYC && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Vendor Material
+                  View Vendor KYC
                 </h2>
               </div>
 
@@ -792,133 +911,7 @@ const ViewVendorKYC = () => {
                       Vendor:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.vendor?.vendor_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Material:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.material?.material_name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Unit of Measure:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.purchase_uom?.name || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Price:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.price || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Minimum Order Quantity:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.minimum_order_quantity || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Lead Time:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.lead_time_days != null
-                        ? `${selectedVendorMaterial.lead_time_days} ${
-                            selectedVendorMaterial.lead_time_days <= 1
-                              ? "day"
-                              : "days"
-                          }`
-                        : "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Tax (%):
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.tax_percentage || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Discount (%):
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.discount_percentage || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Valid From:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.valid_from
-                        ? dayjs(selectedVendorMaterial?.valid_from).format(
-                            "DD-MM-YYYY",
-                          )
-                        : "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Valid To:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.valid_to
-                        ? dayjs(selectedVendorMaterial?.valid_to).format(
-                            "DD-MM-YYYY",
-                          )
-                        : "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Preferred:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.is_preferred == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedVendorMaterial?.is_preferred
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedVendorMaterial?.is_preferred ? "Yes" : "No"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Active:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.is_active == null ? (
-                        "--"
-                      ) : (
-                        <span
-                          className={
-                            selectedVendorMaterial?.is_active
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {selectedVendorMaterial?.is_active ? "Yes" : "No"}
-                        </span>
-                      )}
+                      {selectedVendorKYC?.vendor?.vendor_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -926,7 +919,7 @@ const ViewVendorKYC = () => {
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.creator?.username || "--"}
+                      {selectedVendorKYC?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -934,7 +927,7 @@ const ViewVendorKYC = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.company?.company_name || "--"}
+                      {selectedVendorKYC?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -942,8 +935,8 @@ const ViewVendorKYC = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.created_at
-                        ? dayjs(selectedVendorMaterial?.created_at).format(
+                      {selectedVendorKYC?.created_at
+                        ? dayjs(selectedVendorKYC?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -954,8 +947,8 @@ const ViewVendorKYC = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorMaterial?.updated_at
-                        ? dayjs(selectedVendorMaterial?.updated_at).format(
+                      {selectedVendorKYC?.updated_at
+                        ? dayjs(selectedVendorKYC?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -976,7 +969,7 @@ const ViewVendorKYC = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Vendor Material
+                  Change Vendor KYC
                 </h2>
               </div>
               <button
@@ -1007,75 +1000,47 @@ const ViewVendorKYC = () => {
                 </select>
               </div>
               <div className="flex flex-col">
-                <label className="form-label">
-                  Material <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="material"
-                  value={formData.material}
+                <label className="form-label">Payment Terms</label>
+                <input
+                  type="text"
+                  name="payment_terms"
+                  placeholder="Enter Payment Terms"
+                  value={formData.payment_terms}
                   onChange={handleChange}
                   className="form-input"
-                >
-                  <option value="">Select</option>
-                  {materials.map((mt) => (
-                    <option key={mt.id} value={mt.id}>
-                      {mt.material_name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">
-                  Unit of Measure <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="purchase_uom"
-                  value={formData.purchase_uom}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {uoms.map((uom) => (
-                    <option key={uom.id} value={uom.id}>
-                      {uom.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Price <span className="text-red-500">*</span>
-                </label>
+                <label className="form-label">Credit Days</label>
                 <input
                   type="number"
-                  name="price"
-                  placeholder="Enter Price"
-                  value={formData.price}
+                  name="credit_days"
+                  placeholder="Enter Credit Days"
+                  value={formData.credit_days}
                   onKeyDown={(e) => {
-                    if (["-", "+", "e", "E"].includes(e.key)) {
+                    if (["-", "+", "e", "E", "."].includes(e.key)) {
                       e.preventDefault();
                     }
                   }}
                   onChange={(e) => {
                     let value = e.target.value;
-                    const regex = /^\d*(\.\d{0,4})?$/;
+                    const regex = /^\d*$/;
                     if (value === "" || regex.test(value)) {
                       handleChange(e);
                     }
                   }}
                   min="0"
-                  step="0.0001"
-                  inputMode="decimal"
+                  inputMode="numeric"
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Minimum Order Quantity</label>
+                <label className="form-label">Credit Limit</label>
                 <input
                   type="number"
-                  name="minimum_order_quantity"
-                  placeholder="Enter Minimum Order Qty"
-                  value={formData.minimum_order_quantity}
+                  name="credit_limit"
+                  placeholder="Enter Credit Limit"
+                  value={formData.credit_limit}
                   onKeyDown={(e) => {
                     if (["-", "+", "e", "E"].includes(e.key)) {
                       e.preventDefault();
@@ -1095,104 +1060,354 @@ const ViewVendorKYC = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Lead Time</label>
+                <label className="form-label">
+                  Legal Name <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="number"
-                  name="lead_time_days"
-                  placeholder="Enter Lead Time (Days)"
-                  value={formData.lead_time_days}
-                  onKeyDown={(e) => {
-                    if (["-", "+", "e", "E", "."].includes(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
+                  type="text"
+                  name="legal_name"
+                  placeholder="Enter Legal Name"
+                  value={formData.legal_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Trade Name</label>
+                <input
+                  type="text"
+                  name="trade_name"
+                  placeholder="Enter Trade Name"
+                  value={formData.trade_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Vendor Type</label>
+                <select
+                  name="vendor_type"
+                  value={formData.vendor_type}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {vendortypes.map((vt) => (
+                    <option key={vt.id} value={vt.id}>
+                      {vt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Registration Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="registration_number"
+                  placeholder="Enter Registration Number"
+                  value={formData.registration_number}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Incorporation Date</label>
+                <input
+                  type="date"
+                  name="incorporation_date"
+                  value={formData.incorporation_date}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Country of Registration</label>
+                <select
+                  name="country_of_registration"
+                  value={formData.country_of_registration}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {countries.map((cs) => (
+                    <option key={cs.id} value={cs.id}>
+                      {cs.country_code} - {cs.country_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Tax ID</label>
+                <input
+                  type="text"
+                  name="tax_id"
+                  placeholder="Enter Tax ID"
+                  value={formData.tax_id}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">VAT Number</label>
+                <input
+                  type="text"
+                  name="vat_number"
+                  placeholder="Enter VAT Number"
+                  value={formData.vat_number}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Tax Certificate</label>
+                <input
+                  type="file"
+                  name="tax_certificate"
+                  accept="application/pdf"
+                  ref={taxcertificateRef}
+                  onChange={handleTaxCertificateChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">MSME</label>
+                <select
+                  name="is_msme"
+                  value={formData.is_msme}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">MSME Certificate</label>
+                <input
+                  type="file"
+                  name="msme_certificate"
+                  accept="application/pdf"
+                  ref={msmecertificateRef}
+                  onChange={handleMsmeCertificateChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Bank Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="bank_name"
+                  placeholder="Enter Bank Name"
+                  value={formData.bank_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Account Holder Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="account_holder_name"
+                  placeholder="Enter Account Holder Name"
+                  value={formData.account_holder_name}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Account Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="account_number"
+                  placeholder="Enter Account Number"
+                  value={formData.account_number}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  IFSC <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="ifsc_swift_code"
+                  placeholder="Enter IFSC"
+                  value={formData.ifsc_swift_code}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Branch</label>
+                <input
+                  type="text"
+                  name="bank_branch"
+                  placeholder="Enter Branch"
+                  value={formData.bank_branch}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Bank Proof</label>
+                <input
+                  type="file"
+                  name="bank_proof"
+                  accept="application/pdf"
+                  ref={bankproofRef}
+                  onChange={handleBankProofChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">KYC Status</label>
+                <select
+                  name="kyc_status"
+                  value={formData.kyc_status}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {kycstatus.map((kyc) => (
+                    <option key={kyc.id} value={kyc.id}>
+                      {kyc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">
+                  Registered Address <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="registered_address"
+                  value={formData.registered_address}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter registered address..."
+                ></textarea>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Operational Address</label>
+                <textarea
+                  name="operational_address"
+                  value={formData.operational_address}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter operational address..."
+                ></textarea>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Official Email ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="official_email"
+                  placeholder="Enter Official Email ID"
+                  value={formData.official_email}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Mobile No <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="phone_number"
+                  placeholder="Enter Mobile No"
+                  value={formData.phone_number}
                   onChange={(e) => {
-                    let value = e.target.value;
-                    const regex = /^\d*$/;
-                    if (value === "" || regex.test(value)) {
+                    const regex = /^[0-9]*$/;
+                    if (regex.test(e.target.value)) {
                       handleChange(e);
                     }
                   }}
-                  min="0"
+                  maxLength={10}
+                  pattern="[0-9]*"
                   inputMode="numeric"
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Tax (%)</label>
+                <label className="form-label">
+                  Signatory Name <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="number"
-                  name="tax_percentage"
-                  placeholder="Enter Tax (%)"
-                  value={formData.tax_percentage}
-                  onKeyDown={(e) => {
-                    if (["-", "+", "e", "E"].includes(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    const regex = /^\d*(\.\d{0,2})?$/;
-                    if (value === "" || regex.test(value)) {
-                      handleChange(e);
-                    }
-                  }}
-                  min="0"
-                  step="0.01"
-                  inputMode="decimal"
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Discount (%)</label>
-                <input
-                  type="number"
-                  name="discount_percentage"
-                  placeholder="Enter Discount (%)"
-                  value={formData.discount_percentage}
-                  onKeyDown={(e) => {
-                    if (["-", "+", "e", "E"].includes(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    const regex = /^\d*(\.\d{0,2})?$/;
-                    if (value === "" || regex.test(value)) {
-                      handleChange(e);
-                    }
-                  }}
-                  min="0"
-                  step="0.01"
-                  inputMode="decimal"
-                  className="form-input"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">Valid From</label>
-                <input
-                  type="date"
-                  name="valid_from"
-                  value={formData.valid_from}
+                  type="text"
+                  name="signatory_name"
+                  placeholder="Enter Signatory Name"
+                  value={formData.signatory_name}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Valid To</label>
+                <label className="form-label">
+                  Signatory Designation <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="date"
-                  name="valid_to"
-                  value={formData.valid_to}
+                  type="text"
+                  name="signatory_designation"
+                  placeholder="Enter Signatory Designation"
+                  value={formData.signatory_designation}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Preferred</label>
+                <label className="form-label">
+                  Signatory Email ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="signatory_email"
+                  placeholder="Enter Signatory Email ID"
+                  value={formData.signatory_email}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Signatory Mobile No <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="signatory_phone"
+                  placeholder="Enter Signatory Mobile No"
+                  value={formData.signatory_phone}
+                  onChange={(e) => {
+                    const regex = /^[0-9]*$/;
+                    if (regex.test(e.target.value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  maxLength={10}
+                  pattern="[0-9]*"
+                  inputMode="numeric"
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">NDA Signed</label>
                 <select
-                  name="is_preferred"
-                  value={formData.is_preferred}
+                  name="nda_signed"
+                  value={formData.nda_signed}
                   onChange={handleChange}
                   className="form-input"
                 >
@@ -1202,16 +1417,66 @@ const ViewVendorKYC = () => {
                 </select>
               </div>
               <div className="flex flex-col">
-                <label className="form-label">Active</label>
+                <label className="form-label">Contract Signed</label>
                 <select
-                  name="is_active"
-                  value={formData.is_active}
+                  name="contract_signed"
+                  value={formData.contract_signed}
                   onChange={handleChange}
                   className="form-input"
                 >
                   <option value="">Select</option>
                   <option value="true">Yes</option>
                   <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Blacklisted</label>
+                <select
+                  name="is_blacklisted"
+                  value={formData.is_blacklisted}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Risk Rating</label>
+                <input
+                  type="text"
+                  name="risk_rating"
+                  placeholder="Enter Risk Rating"
+                  value={formData.risk_rating}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Approved At</label>
+                <input
+                  type="datetime-local"
+                  name="approved_at"
+                  value={formData.approved_at}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Approved By</label>
+                <select
+                  name="approved_by"
+                  value={formData.approved_by}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {approvedby.map((apby) => (
+                    <option key={apby.id} value={apby.id}>
+                      {apby.username} - {apby.email}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex flex-col">
@@ -1289,7 +1554,7 @@ const ViewVendorKYC = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedVendorMaterials([]);
+                  if (isBulkDelete) setSelectedVendorKYCs([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
