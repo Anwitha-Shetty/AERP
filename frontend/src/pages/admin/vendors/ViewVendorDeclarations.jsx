@@ -37,7 +37,7 @@ const ViewVendorDeclarations = () => {
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 7;
+  const rowsPerPage = 5;
 
   useEffect(() => {
     dispatch(fetchVenderDeclarations());
@@ -458,7 +458,7 @@ const ViewVendorDeclarations = () => {
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -518,7 +518,7 @@ const ViewVendorDeclarations = () => {
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Vendor Declarations
+                View Declarations
               </h2>
             </div>
             {/* Right Section */}
@@ -539,7 +539,7 @@ const ViewVendorDeclarations = () => {
                 to="/admin/vendor-declaration/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Vendor Declaration
+                <FiPlus /> Create Declaration
               </Link>
 
               {selectedVendorDeclarations.length > 1 && (
@@ -789,7 +789,7 @@ const ViewVendorDeclarations = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Vendor Declaration
+                  View Declaration
                 </h2>
               </div>
 
@@ -948,7 +948,7 @@ const ViewVendorDeclarations = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Vendor Declaration
+                  Change Declaration
                 </h2>
               </div>
               <button

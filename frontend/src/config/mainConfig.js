@@ -67,13 +67,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorTypeMenu",
-                label: "Create Vendor Type",
+                label: "Create Type",
                 path: "/admin/vendor-types/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorTypesMenu",
-                label: "View Vendor Types",
+                label: "View Types",
                 path: "/admin/vendor-types/view",
                 iconName: "FiUsers",
               },
@@ -86,13 +86,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorKYCStatusMenu",
-                label: "Create Vendor KYC Status",
+                label: "Create KYC Status",
                 path: "/admin/vendor-kyc-status/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorKYCStatusMenu",
-                label: "View Vendor KYC Status",
+                label: "View KYC Status",
                 path: "/admin/vendor-kyc-status/view",
                 iconName: "FiUsers",
               },
@@ -124,13 +124,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorMaterialMenu",
-                label: "Create Vendor Material",
+                label: "Create Material",
                 path: "/admin/vendor-material/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorMaterialsMenu",
-                label: "View Vendor Materials",
+                label: "View Materials",
                 path: "/admin/vendor-materials/view",
                 iconName: "FiUsers",
               },
@@ -143,13 +143,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorDeclarationMenu",
-                label: "Create Vendor Declaration",
+                label: "Create Declaration",
                 path: "/admin/vendor-declaration/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorDeclarationsMenu",
-                label: "View Vendor Declarations",
+                label: "View Declarations",
                 path: "/admin/vendor-declarations/view",
                 iconName: "FiUsers",
               },
@@ -162,13 +162,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorQuotationMenu",
-                label: "Create Vendor Quotation",
+                label: "Create Quotation",
                 path: "/admin/vendor-quotation/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorQuotationsMenu",
-                label: "View Vendor Quotations",
+                label: "View Quotations",
                 path: "/admin/vendor-quotations/view",
                 iconName: "FiUsers",
               },
@@ -181,13 +181,13 @@ const mainConfig = [
             subMenu: [
               {
                 id: "createVendorKYCMenu",
-                label: "Create Vendor KYC",
+                label: "Create KYC",
                 path: "/admin/vendor-kyc/create",
                 iconName: "FiUsers",
               },
               {
                 id: "viewVendorKYCsMenu",
-                label: "View Vendor KYC",
+                label: "View KYC",
                 path: "/admin/vendor-kyc/view",
                 iconName: "FiUsers",
               },

@@ -7,7 +7,7 @@ const MaterialCategories = () => {
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none"></main>
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none"></main>
     </div>
   );
 };

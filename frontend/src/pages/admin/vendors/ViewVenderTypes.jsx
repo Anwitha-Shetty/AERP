@@ -34,7 +34,7 @@ const ViewVenderTypes = () => {
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 7;
+  const rowsPerPage = 5;
 
   useEffect(() => {
     dispatch(fetchVenderTypes());
@@ -426,7 +426,7 @@ const ViewVenderTypes = () => {
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -486,7 +486,7 @@ const ViewVenderTypes = () => {
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Vendor Types
+                View Types
               </h2>
             </div>
             {/* Right Section */}
@@ -507,7 +507,7 @@ const ViewVenderTypes = () => {
                 to="/admin/vendor-types/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Vendor Type
+                <FiPlus /> Create Type
               </Link>
 
               {selectedVendorTypes.length > 1 && (
@@ -749,7 +749,7 @@ const ViewVenderTypes = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Vendor Type
+                  View Type
                 </h2>
               </div>
 
@@ -944,7 +944,7 @@ const ViewVenderTypes = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Vendor Type
+                  Change Type
                 </h2>
               </div>
               <button

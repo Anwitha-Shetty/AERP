@@ -181,7 +181,7 @@ const CreateVenderType = () => {
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             {breadcrumbs.map((b, index) => (
@@ -240,7 +240,7 @@ const CreateVenderType = () => {
                       <div className="flex items-center gap-2 mt-4 pb-1">
                         <FiUsers className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create Vendor Type
+                          Create Type
                         </h2>
                       </div>
 
@@ -252,7 +252,7 @@ const CreateVenderType = () => {
                       </button>
                     </div>
 
-                    <div className="max-h-[290px] rounded overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
+                    <div className="max-h-[255px] rounded overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">

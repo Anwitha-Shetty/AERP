@@ -29,6 +29,7 @@ import {
 } from "../../../store/slices/vendorKYCSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
+import api from "../../../utils/api";
 
 const ViewVendorKYC = () => {
   const dispatch = useDispatch();
@@ -51,7 +52,7 @@ const ViewVendorKYC = () => {
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 7;
+  const rowsPerPage = 5;
 
   useEffect(() => {
     dispatch(fetchVenderKYC());
@@ -251,6 +252,10 @@ const ViewVendorKYC = () => {
       taxcertificateRef.current.value = "";
       return;
     }
+    setFormData((prev) => ({
+      ...prev,
+      tax_certificate: file,
+    }));
   };
 
   const handleMsmeCertificateChange = () => {
@@ -262,6 +267,10 @@ const ViewVendorKYC = () => {
       msmecertificateRef.current.value = "";
       return;
     }
+    setFormData((prev) => ({
+      ...prev,
+      msme_certificate: file,
+    }));
   };
 
   const handleBankProofChange = () => {
@@ -273,6 +282,10 @@ const ViewVendorKYC = () => {
       bankproofRef.current.value = "";
       return;
     }
+    setFormData((prev) => ({
+      ...prev,
+      bank_proof: file,
+    }));
   };
 
   const handleOpenEdit = (vendor) => {
@@ -335,7 +348,6 @@ const ViewVendorKYC = () => {
       msme_certificate: vendor.msme_certificate || "",
       bank_proof: vendor.bank_proof || "",
     });
-
     setShowEditModal(true);
   };
 
@@ -345,8 +357,25 @@ const ViewVendorKYC = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (key === "description") {
-        data.append("description", formData.description ?? null);
+      if (key === "registered_address") {
+        data.append("registered_address", formData.registered_address ?? null);
+      } else if (key === "operational_address") {
+        data.append(
+          "operational_address",
+          formData.operational_address ?? null,
+        );
+      } else if (key === "tax_certificate") {
+        if (formData.tax_certificate instanceof File) {
+          data.append("tax_certificate", formData.tax_certificate);
+        }
+      } else if (key === "msme_certificate") {
+        if (formData.msme_certificate instanceof File) {
+          data.append("msme_certificate", formData.msme_certificate);
+        }
+      } else if (key === "bank_proof") {
+        if (formData.bank_proof instanceof File) {
+          data.append("bank_proof", formData.bank_proof);
+        }
       } else {
         if (formData[key] !== undefined && formData[key] !== null) {
           data.append(key, formData[key]);
@@ -468,6 +497,12 @@ const ViewVendorKYC = () => {
       creator: "",
       company: "",
     });
+
+    setExistingFiles({
+      tax_certificate: "",
+      msme_certificate: "",
+      bank_proof: "",
+    });
   };
 
   // ----------------- Delete handlers -----------------
@@ -579,7 +614,7 @@ const ViewVendorKYC = () => {
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[80px] p-6 overflow-y-auto bg-white backdrop-blur-sm rounded-tl-2xl shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -638,9 +673,7 @@ const ViewVendorKYC = () => {
             {/* Left Section */}
             <div className="flex items-center gap-2">
               <FiUsers className="text-amber-400 text-lg" />
-              <h2 className="text-lg font-semibold text-gray-700">
-                View Vendor KYC
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-700">View KYC</h2>
             </div>
             {/* Right Section */}
             <div className="flex items-center gap-2">
@@ -660,7 +693,7 @@ const ViewVendorKYC = () => {
                 to="/admin/vendor-kyc/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Vendor KYC
+                <FiPlus /> Create KYC
               </Link>
 
               {selectedVendorKYCs.length > 1 && (
@@ -890,7 +923,7 @@ const ViewVendorKYC = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Vendor KYC
+                  View KYC
                 </h2>
               </div>
 
@@ -916,10 +949,396 @@ const ViewVendorKYC = () => {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
+                      Payment Terms:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.payment_terms || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Credit Days:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.credit_days || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Credit Limit:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.credit_limit || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Legal Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.legal_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Trade Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.trade_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Vendor Type:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.vendor_type?.name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Registration Number:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.registration_number || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Incorporation Date:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.incorporation_date
+                        ? dayjs(selectedVendorKYC?.incorporation_date).format(
+                            "DD-MM-YYYY",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Country of Registration:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.country_of_registration
+                        ?.country_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Tax ID:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.tax_id || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      VAT Number:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.vat_number || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Tax Certificate:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.tax_certificate ? (
+                        <a
+                          href={
+                            selectedVendorKYC.tax_certificate.startsWith("http")
+                              ? selectedVendorKYC.tax_certificate
+                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedVendorKYC.tax_certificate}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-400"
+                        >
+                          {selectedVendorKYC.tax_certificate.split("/").pop()}
+                        </a>
+                      ) : (
+                        "--"
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      MSME:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.is_msme == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorKYC?.is_msme
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorKYC?.is_msme ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      MSME Certificate:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.msme_certificate ? (
+                        <a
+                          href={
+                            selectedVendorKYC.msme_certificate.startsWith(
+                              "http",
+                            )
+                              ? selectedVendorKYC.msme_certificate
+                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedVendorKYC.msme_certificate}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-400"
+                        >
+                          {selectedVendorKYC.msme_certificate.split("/").pop()}
+                        </a>
+                      ) : (
+                        "--"
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Bank Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.bank_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Account Holder Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.account_holder_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Account Number:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.account_number || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      IFSC:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.ifsc_swift_code || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Branch:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.bank_branch || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Bank Proof:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.bank_proof ? (
+                        <a
+                          href={
+                            selectedVendorKYC.bank_proof.startsWith("http")
+                              ? selectedVendorKYC.bank_proof
+                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedVendorKYC.bank_proof}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-400"
+                        >
+                          {selectedVendorKYC.bank_proof.split("/").pop()}
+                        </a>
+                      ) : (
+                        "--"
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      KYC Status:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.kyc_status?.name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Registered Address:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedVendorKYC?.registered_address || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Operational Address:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedVendorKYC?.operational_address || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Official Email ID:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.official_email || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Mobile No:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.phone_number || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Signatory Name:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.signatory_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Signatory Designation:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.signatory_designation || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Signatory Email ID:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.signatory_email || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Signatory Mobile No:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.signatory_phone || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      NDA Signed:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.nda_signed == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorKYC?.nda_signed
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorKYC?.nda_signed ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Contract Signed:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.contract_signed == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorKYC?.contract_signed
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorKYC?.contract_signed ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Blacklisted:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.is_blacklisted == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedVendorKYC?.is_blacklisted
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedVendorKYC?.is_blacklisted ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Risk Rating:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.risk_rating || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Approved At:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.approved_at
+                        ? dayjs(selectedVendorKYC?.approved_at).format(
+                            "DD-MM-YYYY hh:mm A",
+                          )
+                        : "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Approved By:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.approved_by?.username || "--"} -{" "}
+                      {selectedVendorKYC?.approved_by?.email || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedVendorKYC?.creator?.username || "--"}
+                      {selectedVendorKYC?.creator?.username || "--"} -{" "}
+                      {selectedVendorKYC?.creator?.email || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -927,6 +1346,7 @@ const ViewVendorKYC = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedVendorKYC?.company?.company_code || "--"} -{" "}
                       {selectedVendorKYC?.company?.company_name || "--"}
                     </td>
                   </tr>
@@ -969,7 +1389,7 @@ const ViewVendorKYC = () => {
               <div className="flex items-center gap-2">
                 <FiUsers className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Vendor KYC
+                  Change KYC
                 </h2>
               </div>
               <button
@@ -1133,7 +1553,7 @@ const ViewVendorKYC = () => {
                   <option value="">Select</option>
                   {countries.map((cs) => (
                     <option key={cs.id} value={cs.id}>
-                      {cs.country_code} - {cs.country_name}
+                      {cs.country_name}
                     </option>
                   ))}
                 </select>
@@ -1170,6 +1590,20 @@ const ViewVendorKYC = () => {
                   onChange={handleTaxCertificateChange}
                   className="form-input"
                 />
+                {existingFiles.tax_certificate && (
+                  <a
+                    href={
+                      existingFiles.tax_certificate.startsWith("http")
+                        ? existingFiles.tax_certificate
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.tax_certificate}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400"
+                  >
+                    {existingFiles.tax_certificate.split("/").pop()}
+                  </a>
+                )}
               </div>
               <div className="flex flex-col">
                 <label className="form-label">MSME</label>
@@ -1194,6 +1628,20 @@ const ViewVendorKYC = () => {
                   onChange={handleMsmeCertificateChange}
                   className="form-input"
                 />
+                {existingFiles.msme_certificate && (
+                  <a
+                    href={
+                      existingFiles.msme_certificate.startsWith("http")
+                        ? existingFiles.msme_certificate
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.msme_certificate}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400"
+                  >
+                    {existingFiles.msme_certificate.split("/").pop()}
+                  </a>
+                )}
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
@@ -1268,6 +1716,20 @@ const ViewVendorKYC = () => {
                   onChange={handleBankProofChange}
                   className="form-input"
                 />
+                {existingFiles.bank_proof && (
+                  <a
+                    href={
+                      existingFiles.bank_proof.startsWith("http")
+                        ? existingFiles.bank_proof
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.bank_proof}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400"
+                  >
+                    {existingFiles.bank_proof.split("/").pop()}
+                  </a>
+                )}
               </div>
               <div className="flex flex-col">
                 <label className="form-label">KYC Status</label>

@@ -24,6 +24,7 @@ import CreateVendorKYCStatus from "./pages/admin/vendors/CreateVendorKYCStatus";
 import ViewVendorKYCStatus from "./pages/admin/vendors/ViewVendorKYCStatus";
 import CreateVendorKYC from "./pages/admin/vendors/CreateVendorKYC";
 import ViewVendorKYC from "./pages/admin/vendors/ViewVendorKYC";
+import VendorMaster from "./pages/admin/vendors/VendorMaster";
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
         />
         <Route path="/admin/vendor-kyc/create" element={<CreateVendorKYC />} />
         <Route path="/admin/vendor-kyc/view" element={<ViewVendorKYC />} />
+        <Route path="/admin/vendor-master" element={<VendorMaster />} />
 
         {/* Materials */}
         <Route path="/admin/material-groups" element={<MaterialGroups />} />

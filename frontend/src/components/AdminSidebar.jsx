@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import logo from "../assets/logo.png";
@@ -21,6 +21,8 @@ import {
   setOpenMenus,
   setCodeMap,
 } from "../store/slices/sidebarSlice";
+
+const HEADER_HEIGHT = 160; // adjust once if needed
 
 const getIcon = (iconName) => {
   if (!iconName) return null;
@@ -46,24 +48,15 @@ const getIcon = (iconName) => {
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const dropdownRef = useRef(null);
-
-  // const isProfilePage = location.pathname.startsWith(
-  //   "/admin/employees/profile",
-  // );
-
   const dispatch = useDispatch();
 
-  const { openMenus, searchCode } = useSelector((state) => state.sidebar);
+  const { openMenus, searchCode, codeMap } = useSelector(
+    (state) => state.sidebar,
+  );
 
-  const username = Cookies.get("username") || "User";
-  const [showDropdown, setShowDropdown] = React.useState(false);
-  const [showLogoutPopup, setShowLogoutPopup] = React.useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
-  /* ------------------------------
-     RECURSIVE OPEN MENU HANDLER
-  --------------------------------*/
-
+  /* AUTO OPEN ACTIVE MENU */
   useEffect(() => {
     const activePath = location.pathname;
     const newOpenMenus = {};
@@ -73,7 +66,6 @@ const AdminSidebar = () => {
         if (menu.path === activePath) {
           parents.forEach((p) => (newOpenMenus[p] = true));
         }
-
         if (menu.subMenu) {
           findAndOpenParents(menu.subMenu, [...parents, menu.id]);
         }
@@ -84,120 +76,125 @@ const AdminSidebar = () => {
     dispatch(setOpenMenus(newOpenMenus));
   }, [location.pathname, dispatch]);
 
-  const { codeMap } = useSelector((state) => state.sidebar);
-
+  /* FETCH T-CODE MAP */
   useEffect(() => {
-    const token = Cookies.get("access_token");
-    if (!token) return;
-
     const fetchNavigation = async () => {
       try {
         const res = await api.get("/access/navigation_box/");
-        const data = res.data;
-
         const dynamicMap = {};
-
-        data.forEach((item) => {
+        res.data.forEach((item) => {
           if (item.code && item.path) {
             dynamicMap[item.code] = item.path;
           }
         });
-
         dispatch(setCodeMap(dynamicMap));
       } catch (error) {
-        console.error("Navigation API error:", error);
+        console.error(error);
       }
     };
-
     fetchNavigation();
   }, [dispatch]);
 
+  const handleSearch = () => {
+    if (searchCode.length === 3) {
+      const route = codeMap[searchCode];
+      if (route) navigate(route);
+      dispatch(clearSearchCode());
+    }
+  };
+
+  const sidebarWidth = collapsed ? "w-[90px]" : "w-[350px]";
+  const contentMargin = collapsed ? "ml-[90px]" : "ml-[350px]";
+
+  // const getEffectivePath = () => {
+  //   if (location.pathname.startsWith("/admin/users/profile")) {
+  //     return "/admin/users";
+  //   }
+  //   return location.pathname;
+  // };
+
   const getMenuClass = (path) => {
+    const activePath = location.pathname;
+
     return `flex items-center justify-between w-full px-2 py-1 rounded-md cursor-pointer transition ${
-      location.pathname === path
-        ? "bg-amber-100 text-gray-800"
-        : "text-gray-800"
+      activePath === path ? "bg-amber-100 text-gray-800" : "text-gray-800"
     }`;
   };
 
   const getLinkClass = (path) => {
+    const activePath = location.pathname;
     return `flex items-center gap-3 px-2 py-1 rounded-md cursor-pointer transition ${
-      location.pathname === path
-        ? "bg-amber-100 text-gray-700"
-        : "text-gray-700"
+      activePath === path ? "bg-amber-100 text-gray-700" : "text-gray-700"
     }`;
   };
 
-  const handleToggleMenu = (id) => {
-    dispatch(toggleMenu(id));
-  };
-
-  const renderMenu = (menu, level = 0) => {
+  const renderMenu = (menu) => {
     const isOpen = openMenus[menu.id];
 
     if (!menu.subMenu) {
       return (
-        <li key={menu.id}>
+        <div key={menu.id}>
           <Link to={menu.path} className={getLinkClass(menu.path)}>
             {getIcon(menu.iconName)}
             <span>{menu.label}</span>
           </Link>
-        </li>
+        </div>
       );
     }
 
     return (
-      <li key={menu.id}>
+      <div key={menu.id}>
         <button
-          className={getMenuClass(menu.path)}
-          onClick={() => handleToggleMenu(menu.id)}
+          onClick={() => dispatch(toggleMenu(menu.id))}
+          className="flex items-center justify-between w-full px-2 py-1 rounded-md text-gray-800"
         >
           <div className="flex items-center gap-3">
             {getIcon(menu.iconName)}
             <span>{menu.label}</span>
           </div>
 
-          {/* ✅ SHOW ICON ONLY WHEN OPEN */}
           {isOpen && (
-            <FiIcons.FiChevronRight className="rotate-90 transition-transform duration-300 text-gray-300" />
+            <FiIcons.FiChevronRight className="rotate-90 text-gray-300 transition-transform duration-300" />
           )}
         </button>
 
         <ul
-          className={`ml-8 space-y-[1px] text-sm transition-all duration-300 ease-in-out ${
+          className={`ml-8 text-sm space-y-[1px] transition-all duration-300 ${
             isOpen ? "block" : "hidden"
           }`}
         >
-          {menu.subMenu.map((sub) => renderMenu(sub, level + 1))}
+          {menu.subMenu.map((sub) =>
+            sub.subMenu ? (
+              renderMenu(sub)
+            ) : (
+              <li key={sub.path}>
+                <Link to={sub.path} className={getLinkClass(sub.path)}>
+                  {getIcon(sub.iconName)}
+                  <span>{sub.label}</span>
+                </Link>
+              </li>
+            ),
+          )}
         </ul>
-      </li>
+      </div>
     );
   };
 
-  const handleSearch = () => {
-    if (searchCode.length === 3) {
-      const route = codeMap[searchCode];
-
-      if (route) {
-        navigate(route);
-      } else {
-        console.warn("Invalid T code");
-      }
-
-      dispatch(clearSearchCode());
-    }
-  };
-
   const handleLogoClick = () => {
+    const username = Cookies.get("username");
     const position = Cookies.get("position");
+
     let path = "/";
-    if (position === "ADMIN") path = "/admin/home";
-    else if (position === "MANAGER") path = "/manager/home";
-    else if (position === "GENERALMANAGER") path = "/general-manager/home";
-    else if (position === "VENDOR") path = "/vendor/home";
-    else if (position === "ASSOCIATE") path = "/associate/home";
-    else if (position === "EXECUTIVES") path = "/executives/home";
-    navigate(path);
+
+    if (position === "ADMIN") {
+      path = "/admin/home";
+    } else if (position === "GM") {
+      path = "/manager/home";
+    } else if (position === "EXE") {
+      path = "/home";
+    }
+
+    navigate(path, { state: { username: username } });
   };
 
   const handleLogout = () => {
@@ -209,111 +206,68 @@ const AdminSidebar = () => {
   };
 
   return (
-    <div className="flex relative min-h-screen bg-gradient-to-t from-gray-100 via-gray-50 to-white">
-      <header className="fixed top-0 left-[350px] w-[calc(100%-350px)] h-20 flex items-center justify-between px-6 z-30">
-        <div className="flex items-center space-x-5 ml-auto z-50">
-          <div className="flex items-center border border-gray-300 overflow-hidden rounded h-8">
+    <div className="min-h-screen bg-gray-100">
+      {/* HEADER */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-200 border-b border-gray-400">
+        <div
+          className="cursor-pointer mb-2 px-6 py-1.5"
+          onClick={handleLogoClick}
+        >
+          <img src={logo} alt="Logo" className="h-16 object-contain" />
+          <div className="text-xs font-semibold">
+            Enterprise Resource Structure
+          </div>
+        </div>
+
+        <div className="flex items-center px-6 py-3 border-t border-gray-400 bg-gray-100">
+          <span className="font-medium mr-12">Quick Access</span>
+
+          <div className="flex items-stretch border border-gray-400 bg-white rounded overflow-hidden">
+            <span className="px-3 flex items-center border-r border-gray-300">
+              T-code:
+            </span>
+
             <input
               type="text"
               maxLength={3}
-              placeholder="Enter T code"
-              className="flex-1 px-2 outline-none rounded-l w-28"
               value={searchCode}
               onChange={(e) =>
                 dispatch(setSearchCode(e.target.value.toUpperCase()))
               }
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="px-3 w-14 h-8 outline-none"
             />
+
             <button
               onClick={handleSearch}
-              className="bg-amber-400 text-black flex items-center justify-center px-2 rounded-r h-full"
+              className="px-3 bg-amber-400 flex items-center justify-center"
             >
-              <FiIcons.FiSearch className="w-4 h-4" />
+              <FiIcons.FiSearch />
             </button>
-          </div>
-
-          <FiIcons.FiSettings
-            className="text-xl text-gray-700 hover:text-amber-400 cursor-pointer"
-            onClick={() => navigate("/admin/settings")}
-          />
-
-          <div className="relative" ref={dropdownRef}>
-            <div
-              className="w-8 h-8 rounded-full bg-amber-400 text-black font-bold flex items-center justify-center cursor-pointer"
-              onClick={() => setShowDropdown(!showDropdown)}
-            >
-              {username.charAt(0).toUpperCase()}
-            </div>
-
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-300 z-50">
-                <div className="px-4 py-3 text-sm font-semibold border-b border-gray-300">
-                  Hello! {username}
-                </div>
-
-                {/* {!isProfilePage && (
-                  <button
-                    className="flex items-center w-full px-4 py-2 text-sm font-semibold border-b border-gray-300 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/admin/profile/${Cookies.get("employee_code")}`)
-                    }
-                  >
-                    <FiIcons.FiUser className="mr-2" /> Profile
-                  </button>
-                )} */}
-
-                <button
-                  className="flex items-center w-full px-4 py-2 text-sm font-semibold cursor-pointer"
-                  onClick={() => setShowLogoutPopup(true)}
-                >
-                  <FiIcons.FiLogOut className="mr-2" /> Logout
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </header>
 
-      <aside className="fixed top-0 left-0 z-20 w-[350px] h-full px-3 flex flex-col">
-        <div className="cursor-pointer mb-2" onClick={handleLogoClick}>
-          <img src={logo} alt="Logo" className="w-full h-34 object-contain" />
-        </div>
-
-        <nav className="flex-1 space-y-[0.5px] text-[15px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
+      {/* SIDEBAR (Correctly Positioned) */}
+      <aside
+        className={`fixed left-0 ${sidebarWidth} bg-white border-r border-gray-300 transition-all duration-300`}
+        style={{
+          top: HEADER_HEIGHT,
+          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+        }}
+      >
+        <nav className="h-full overflow-y-auto px-3 text-[15px] py-2">
           {mainConfig.map(renderMenu)}
         </nav>
       </aside>
 
-      {showLogoutPopup && (
-        <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
-          <div className="bg-white p-4 rounded-md w-11/12 max-w-md shadow-xl">
-            <div className="flex justify-center mb-3">
-              <FiIcons.FiAlertTriangle className="text-amber-400 text-4xl" />
-            </div>
-
-            <h2 className="text-lg font-semibold text-center mb-4">
-              Are you sure you want to exit?
-            </h2>
-
-            <div className="flex justify-center gap-4 mt-4">
-              <button
-                onClick={handleLogout}
-                className="bg-amber-400 text-black font-medium px-3 py-1.5 rounded-md cursor-pointer"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => setShowLogoutPopup(false)}
-                className="bg-gray-600 text-white font-medium px-3 py-1.5 rounded-md cursor-pointer"
-              >
-                No
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <main className="ml-[350px] mt-20 p-6 flex-1"></main>
+      {/* CONTENT */}
+      <main
+        className={`${contentMargin} p-6 transition-all duration-300`}
+        style={{ marginTop: HEADER_HEIGHT }}
+      >
+        {/* Page Content */}
+      </main>
     </div>
   );
 };
