@@ -82,7 +82,10 @@ function App() {
         <Route path="/admin/vendor-kyc/create" element={<CreateVendorKYC />} />
         <Route path="/admin/vendor-kyc/view" element={<ViewVendorKYC />} />
         <Route path="/admin/vendor-master" element={<VendorMaster />} />
-        <Route path="/admin/vendors/profile/:id" element={<VendorProfile />} />
+        <Route
+          path="/admin/vendors/profile/:vendor_code"
+          element={<VendorProfile />}
+        />
 
         {/* Materials */}
         <Route path="/admin/material-groups" element={<MaterialGroups />} />

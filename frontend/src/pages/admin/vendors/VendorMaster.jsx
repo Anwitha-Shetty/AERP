@@ -272,7 +272,9 @@ const VendorMaster = () => {
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
                               onClick={() =>
-                                navigate(`/admin/vendors/profile/${vendor.id}`)
+                                navigate(
+                                  `/admin/vendors/profile/${vendor.vendor_code}`,
+                                )
                               }
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
                               title="View"
