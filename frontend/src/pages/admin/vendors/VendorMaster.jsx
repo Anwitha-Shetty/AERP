@@ -22,14 +22,13 @@ const VendorMaster = () => {
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 7;
+  const rowsPerPage = 5;
 
   useEffect(() => {
     dispatch(fetchVenders());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedVendors, setSelectedVendors] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -65,7 +64,7 @@ const VendorMaster = () => {
 
   useEffect(() => {
     updateBreadcrumbs();
-  }, [location.pathname, selectedVendors]);
+  }, [location.pathname]);
 
   const currentIndex = breadcrumbs.findIndex(
     (b) => b.path === location.pathname,
@@ -111,11 +110,11 @@ const VendorMaster = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[325px] mt-[145px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -272,11 +271,9 @@ const VendorMaster = () => {
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              //   onClick={() => {
-                              //     setSelectedVendor(vendor);
-                              //     updateBreadcrumbs("View", vendor.id);
-                              //     setShowConfirm(true);
-                              //   }}
+                              onClick={() =>
+                                navigate(`/admin/vendors/profile/${vendor.id}`)
+                              }
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
                               title="View"
                             >

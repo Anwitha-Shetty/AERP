@@ -1,0 +1,109 @@
+import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import AdminSidebar from "../../../components/AdminSidebar";
+import { useEffect, useState } from "react";
+
+const VendorProfile = () => {
+  const { vendor_code } = useParams();
+  const { vendors } = useSelector((state) => state.vendors);
+
+  const [vendor, setVendor] = useState(null);
+
+  useEffect(() => {
+    if (vendors && vendors.length > 0) {
+      const foundVendor = vendors.find((v) => v.vendor_code === vendor_code);
+      setVendor(foundVendor);
+    }
+  }, [vendors, vendor_code]);
+
+  return (
+    <div className="flex h-screen">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[325px] z-40">
+        <AdminSidebar />
+      </div>
+
+      <main className="flex-1 ml-0 lg:ml-[325px] mt-[145px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+        {!vendor ? (
+          <div className="text-center text-gray-500">Vendor not found.</div>
+        ) : (
+          <div className="bg-white border border-gray-300 rounded-md shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+              Vendor Profile
+            </h2>
+
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <p>
+                  <strong>Name:</strong> {vendor.vendor_name}
+                </p>
+                <p>
+                  <strong>Code:</strong> {vendor.vendor_code}
+                </p>
+                <p>
+                  <strong>Short Name:</strong> {vendor.short_name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {vendor.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {vendor.phone}
+                </p>
+                <p>
+                  <strong>Mobile:</strong> {vendor.mobile}
+                </p>
+                <p>
+                  <strong>Website:</strong> {vendor.website}
+                </p>
+              </div>
+
+              <div>
+                <p>
+                  <strong>Company:</strong> {vendor.company?.company_name}
+                </p>
+                <p>
+                  <strong>Creator:</strong> {vendor.creator?.username}
+                </p>
+                <p>
+                  <strong>Country:</strong> {vendor.country?.country_name}
+                </p>
+                <p>
+                  <strong>State:</strong> {vendor.state?.state_name}
+                </p>
+                <p>
+                  <strong>City:</strong> {vendor.city?.city_name}
+                </p>
+                <p>
+                  <strong>Currency:</strong> {vendor.currency?.currency_code}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  <span
+                    className={
+                      vendor.is_active ? "text-green-600" : "text-red-500"
+                    }
+                  >
+                    {vendor.is_active ? "Active" : "Inactive"}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <p>
+                <strong>Billing Address:</strong> {vendor.billing_address}
+              </p>
+              <p>
+                <strong>Shipping Address:</strong> {vendor.shipping_address}
+              </p>
+              <p>
+                <strong>Remarks:</strong> {vendor.remarks}
+              </p>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default VendorProfile;

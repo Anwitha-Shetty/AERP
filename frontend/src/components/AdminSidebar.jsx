@@ -22,7 +22,7 @@ import {
   setCodeMap,
 } from "../store/slices/sidebarSlice";
 
-const HEADER_HEIGHT = 160; // adjust once if needed
+const HEADER_HEIGHT = 145; // adjust once if needed
 
 const getIcon = (iconName) => {
   if (!iconName) return null;
@@ -49,12 +49,11 @@ const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
 
   const { openMenus, searchCode, codeMap } = useSelector(
     (state) => state.sidebar,
   );
-
-  const [collapsed, setCollapsed] = useState(false);
 
   /* AUTO OPEN ACTIVE MENU */
   useEffect(() => {
@@ -103,28 +102,25 @@ const AdminSidebar = () => {
     }
   };
 
-  const sidebarWidth = collapsed ? "w-[90px]" : "w-[350px]";
-  const contentMargin = collapsed ? "ml-[90px]" : "ml-[350px]";
-
-  // const getEffectivePath = () => {
-  //   if (location.pathname.startsWith("/admin/users/profile")) {
-  //     return "/admin/users";
-  //   }
-  //   return location.pathname;
-  // };
-
-  const getMenuClass = (path) => {
+  /* ---------------- ACTIVE PATH FIX ---------------- */
+  const isPathActive = (path) => {
     const activePath = location.pathname;
 
-    return `flex items-center justify-between w-full px-2 py-1 rounded-md cursor-pointer transition ${
-      activePath === path ? "bg-amber-100 text-gray-800" : "text-gray-800"
-    }`;
+    // ✅ Vendor Master group active logic
+    if (path === "/admin/vendor-master") {
+      return (
+        activePath === "/admin/vendor-master" ||
+        activePath.startsWith("/admin/vendor-master") ||
+        activePath.startsWith("/admin/vendors/profile/")
+      );
+    }
+
+    return activePath === path;
   };
 
   const getLinkClass = (path) => {
-    const activePath = location.pathname;
     return `flex items-center gap-3 px-2 py-1 rounded-md cursor-pointer transition ${
-      activePath === path ? "bg-amber-100 text-gray-700" : "text-gray-700"
+      isPathActive(path) ? "bg-amber-100 text-gray-700" : "text-gray-700"
     }`;
   };
 
@@ -208,7 +204,7 @@ const AdminSidebar = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-200 border-b border-gray-400">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-200">
         <div
           className="cursor-pointer mb-2 px-6 py-1.5"
           onClick={handleLogoClick}
@@ -219,51 +215,89 @@ const AdminSidebar = () => {
           </div>
         </div>
 
-        <div className="flex items-center px-6 py-3 border-t border-gray-400 bg-gray-100">
-          <span className="font-medium mr-12">Quick Access</span>
+        <div className="flex items-center justify-between px-6 py-2 bg-gray-100">
+          {/* LEFT SIDE */}
+          <div className="flex items-center">
+            <span className="font-medium mr-6">Quick Access</span>
 
-          <div className="flex items-stretch border border-gray-400 bg-white rounded overflow-hidden">
-            <span className="px-3 flex items-center border-r border-gray-300">
-              T-code:
-            </span>
+            <div className="flex items-stretch bg-white rounded overflow-hidden">
+              <span className="px-3 flex items-center">T-code:</span>
 
-            <input
-              type="text"
-              maxLength={3}
-              value={searchCode}
-              onChange={(e) =>
-                dispatch(setSearchCode(e.target.value.toUpperCase()))
-              }
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="px-3 w-14 h-8 outline-none"
-            />
+              <input
+                type="text"
+                maxLength={3}
+                value={searchCode}
+                onChange={(e) =>
+                  dispatch(setSearchCode(e.target.value.toUpperCase()))
+                }
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="px-3 w-14 h-8 outline-none"
+              />
 
-            <button
-              onClick={handleSearch}
-              className="px-3 bg-amber-400 flex items-center justify-center"
-            >
-              <FiIcons.FiSearch />
-            </button>
+              <button
+                onClick={handleSearch}
+                className="px-3 bg-amber-400 flex items-center justify-center cursor-pointer"
+              >
+                <FiIcons.FiSearch />
+              </button>
+            </div>
           </div>
+
+          {/* RIGHT SIDE (Power Button) */}
+          <button
+            onClick={() => setShowLogoutPopup(true)}
+            className="flex items-center justify-center cursor-pointer"
+          >
+            <FiIcons.FiPower />
+          </button>
         </div>
       </header>
 
       {/* SIDEBAR (Correctly Positioned) */}
       <aside
-        className={`fixed left-0 ${sidebarWidth} bg-white border-r border-gray-300 transition-all duration-300`}
+        className="fixed left-0 w-[325px] transition-all duration-300 bg-gradient-to-t from-gray-100 via-gray-50 to-white"
         style={{
           top: HEADER_HEIGHT,
           height: `calc(100vh - ${HEADER_HEIGHT}px)`,
         }}
       >
-        <nav className="h-full overflow-y-auto px-3 text-[15px] py-2">
+        <nav className="h-full overflow-y-auto px-3 text-[15px] py-2 [&::-webkit-scrollbar]:hidden scrollbar-none">
           {mainConfig.map(renderMenu)}
         </nav>
       </aside>
 
+      {showLogoutPopup && (
+        <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
+          <div className="bg-white px-6 py-4 rounded-md w-11/12 max-w-xs shadow-md border border-gray-300">
+            <div className="flex justify-center mb-1">
+              <FiIcons.FiAlertTriangle className="text-amber-400 text-4xl" />
+            </div>
+
+            <h2 className="text-lg font-semibold text-center mb-2 whitespace-nowrap">
+              Are you sure you want to exit?
+            </h2>
+
+            <div className="flex justify-center gap-4 mt-2">
+              <button
+                onClick={handleLogout}
+                className="bg-amber-400 text-black font-medium px-3 py-1.5 rounded-md cursor-pointer"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setShowLogoutPopup(false)}
+                className="bg-gray-600 text-white font-medium px-3 py-1.5 rounded-md cursor-pointer"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CONTENT */}
       <main
-        className={`${contentMargin} p-6 transition-all duration-300`}
+        className="ml-[325px] p-6 transition-all duration-300"
         style={{ marginTop: HEADER_HEIGHT }}
       >
         {/* Page Content */}
