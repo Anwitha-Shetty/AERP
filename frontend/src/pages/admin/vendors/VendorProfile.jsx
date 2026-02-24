@@ -2,19 +2,43 @@ import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import AdminSidebar from "../../../components/AdminSidebar";
 import { useEffect, useState } from "react";
+import api from "../../../utils/api";
 
 const VendorProfile = () => {
-  const { vendor_code } = useParams();
+  const { id } = useParams();
   const { vendors } = useSelector((state) => state.vendors);
 
   const [vendor, setVendor] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (vendors && vendors.length > 0) {
-      const foundVendor = vendors.find((v) => v.vendor_code === vendor_code);
-      setVendor(foundVendor);
-    }
-  }, [vendors, vendor_code]);
+    const fetchVendor = async () => {
+      try {
+        setLoading(true);
+        if (vendors && vendors.length > 0) {
+          const foundVendor = vendors.find((v) => String(v.id) === String(id));
+          if (foundVendor) {
+            setVendor(foundVendor);
+            setLoading(false);
+            return;
+          }
+        }
+        const res = await api.get(`/vendor/vendor/${id}`);
+        if (res.data && res.data.length > 0) {
+          setVendor(res.data[0]);
+        } else {
+          setVendor(null);
+        }
+      } catch (error) {
+        console.error("Error fetching vendor:", error);
+        setVendor(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendor();
+  }, [id, vendors]);
 
   return (
     <div className="flex h-screen">
@@ -23,8 +47,12 @@ const VendorProfile = () => {
       </div>
 
       <main className="flex-1 ml-0 lg:ml-[325px] mt-[145px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
-        {!vendor ? (
-          <div className="text-center text-gray-500">Vendor not found.</div>
+        {loading ? (
+          <div className="flex justify-center items-center">
+            <div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : !vendor ? (
+          <div className="text-center text-gray-500">Vendor not found!</div>
         ) : (
           <div className="bg-white border border-gray-300 rounded-md shadow-sm p-6">
             <h2 className="text-xl font-semibold text-gray-700 mb-4">

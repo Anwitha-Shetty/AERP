@@ -273,7 +273,7 @@ const VendorMaster = () => {
                             <button
                               onClick={() =>
                                 navigate(
-                                  `/admin/vendors/profile/${vendor.vendor_code}`,
+                                  `/admin/vendors/profile/${vendor.id}`,
                                 )
                               }
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"

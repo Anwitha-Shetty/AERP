@@ -55,16 +55,46 @@ const AdminSidebar = () => {
     (state) => state.sidebar,
   );
 
-  /* AUTO OPEN ACTIVE MENU */
+  // /* AUTO OPEN ACTIVE MENU */
+  // useEffect(() => {
+  //   const activePath = location.pathname;
+  //   const newOpenMenus = {};
+
+  //   const findAndOpenParents = (menus, parents = []) => {
+  //     menus.forEach((menu) => {
+  //       if (menu.path === activePath) {
+  //         parents.forEach((p) => (newOpenMenus[p] = true));
+  //       }
+  //       if (menu.subMenu) {
+  //         findAndOpenParents(menu.subMenu, [...parents, menu.id]);
+  //       }
+  //     });
+  //   };
+
+  //   findAndOpenParents(mainConfig);
+  //   dispatch(setOpenMenus(newOpenMenus));
+  // }, [location.pathname, dispatch]);
+
+  /* ---------------- KEEP MENU OPEN FOR CHILD ROUTES ---------------- */
   useEffect(() => {
     const activePath = location.pathname;
     const newOpenMenus = {};
 
     const findAndOpenParents = (menus, parents = []) => {
       menus.forEach((menu) => {
-        if (menu.path === activePath) {
+        const isVendorProfile = activePath.startsWith(
+          "/admin/vendors/profile/",
+        );
+
+        const isMatch =
+          menu.path === activePath ||
+          activePath.startsWith(menu.path) ||
+          (menu.path === "/admin/vendor-master" && isVendorProfile);
+
+        if (isMatch) {
           parents.forEach((p) => (newOpenMenus[p] = true));
         }
+
         if (menu.subMenu) {
           findAndOpenParents(menu.subMenu, [...parents, menu.id]);
         }
@@ -106,7 +136,6 @@ const AdminSidebar = () => {
   const isPathActive = (path) => {
     const activePath = location.pathname;
 
-    // ✅ Vendor Master group active logic
     if (path === "/admin/vendor-master") {
       return (
         activePath === "/admin/vendor-master" ||
