@@ -22,7 +22,7 @@ import {
   setCodeMap,
 } from "../store/slices/sidebarSlice";
 
-const HEADER_HEIGHT = 145; // adjust once if needed
+const HEADER_HEIGHT = 145;
 
 const getIcon = (iconName) => {
   if (!iconName) return null;
@@ -55,26 +55,6 @@ const AdminSidebar = () => {
     (state) => state.sidebar,
   );
 
-  // /* AUTO OPEN ACTIVE MENU */
-  // useEffect(() => {
-  //   const activePath = location.pathname;
-  //   const newOpenMenus = {};
-
-  //   const findAndOpenParents = (menus, parents = []) => {
-  //     menus.forEach((menu) => {
-  //       if (menu.path === activePath) {
-  //         parents.forEach((p) => (newOpenMenus[p] = true));
-  //       }
-  //       if (menu.subMenu) {
-  //         findAndOpenParents(menu.subMenu, [...parents, menu.id]);
-  //       }
-  //     });
-  //   };
-
-  //   findAndOpenParents(mainConfig);
-  //   dispatch(setOpenMenus(newOpenMenus));
-  // }, [location.pathname, dispatch]);
-
   /* ---------------- KEEP MENU OPEN FOR CHILD ROUTES ---------------- */
   useEffect(() => {
     const activePath = location.pathname;
@@ -105,7 +85,6 @@ const AdminSidebar = () => {
     dispatch(setOpenMenus(newOpenMenus));
   }, [location.pathname, dispatch]);
 
-  /* FETCH T-CODE MAP */
   useEffect(() => {
     const fetchNavigation = async () => {
       try {
@@ -132,7 +111,6 @@ const AdminSidebar = () => {
     }
   };
 
-  /* ---------------- ACTIVE PATH FIX ---------------- */
   const isPathActive = (path) => {
     const activePath = location.pathname;
 
@@ -232,7 +210,6 @@ const AdminSidebar = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* HEADER */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-200">
         <div
           className="cursor-pointer mb-2 px-6 py-1.5"
@@ -245,12 +222,13 @@ const AdminSidebar = () => {
         </div>
 
         <div className="flex items-center justify-between px-6 py-2 bg-gray-100">
-          {/* LEFT SIDE */}
           <div className="flex items-center">
             <span className="font-medium mr-6">Quick Access</span>
 
             <div className="flex items-stretch bg-white rounded overflow-hidden">
-              <span className="px-3 flex items-center">T-code:</span>
+              <span className="px-2 flex items-center border-r border-gray-300">
+                T-code:
+              </span>
 
               <input
                 type="text"
@@ -260,7 +238,7 @@ const AdminSidebar = () => {
                   dispatch(setSearchCode(e.target.value.toUpperCase()))
                 }
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="px-3 w-14 h-8 outline-none"
+                className="px-2 w-14 h-8 outline-none"
               />
 
               <button
@@ -272,7 +250,6 @@ const AdminSidebar = () => {
             </div>
           </div>
 
-          {/* RIGHT SIDE (Power Button) */}
           <button
             onClick={() => setShowLogoutPopup(true)}
             className="flex items-center justify-center cursor-pointer"
@@ -282,9 +259,8 @@ const AdminSidebar = () => {
         </div>
       </header>
 
-      {/* SIDEBAR (Correctly Positioned) */}
       <aside
-        className="fixed left-0 w-[325px] transition-all duration-300 bg-gradient-to-t from-gray-100 via-gray-50 to-white"
+        className="fixed left-0 w-[325px] transition-all duration-300 bg-gradient-to-t from-gray-100 via-gray-50 to-white border-r border-gray-300"
         style={{
           top: HEADER_HEIGHT,
           height: `calc(100vh - ${HEADER_HEIGHT}px)`,
@@ -324,13 +300,10 @@ const AdminSidebar = () => {
         </div>
       )}
 
-      {/* CONTENT */}
       <main
         className="ml-[325px] p-6 transition-all duration-300"
         style={{ marginTop: HEADER_HEIGHT }}
-      >
-        {/* Page Content */}
-      </main>
+      ></main>
     </div>
   );
 };

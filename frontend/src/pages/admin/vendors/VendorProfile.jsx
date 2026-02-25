@@ -1,12 +1,14 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import AdminSidebar from "../../../components/AdminSidebar";
 import { useEffect, useState } from "react";
 import api from "../../../utils/api";
+import { FiArrowLeft } from "react-icons/fi";
 
 const VendorProfile = () => {
   const { id } = useParams();
   const { vendors } = useSelector((state) => state.vendors);
+  const navigate = useNavigate();
 
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,16 +50,22 @@ const VendorProfile = () => {
 
       <main className="flex-1 ml-0 lg:ml-[325px] mt-[145px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         {loading ? (
-          <div className="flex justify-center items-center">
-            <div className="w-6 h-6 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+          <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
+            <div className="w-6 h-6 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : !vendor ? (
           <div className="text-center text-gray-500">Vendor not found!</div>
         ) : (
-          <div className="bg-white border border-gray-300 rounded-md shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-              Vendor Profile
-            </h2>
+          <div className="bg-white">
+            <div className="flex items-center gap-2 bg-gray-50 p-2 border border-gray-300 rounded">
+              <button
+                onClick={() => navigate("/admin/vendor-master")}
+                className="cursor-pointer"
+              >
+                <FiArrowLeft size={16} />
+              </button>
+              <div></div>
+            </div>
 
             <div className="grid grid-cols-2 gap-6 text-sm">
               <div>
