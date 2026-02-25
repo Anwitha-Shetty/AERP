@@ -10,6 +10,7 @@ import {
   FaClipboardList,
   FaFileSignature,
   FaBuilding,
+  FaCog,
 } from "react-icons/fa";
 import mainConfig from "../config/mainConfig";
 import React from "react";
@@ -21,6 +22,7 @@ import {
   setOpenMenus,
   setCodeMap,
 } from "../store/slices/sidebarSlice";
+import {MdCurrencyExchange} from "react-icons/md"
 
 const HEADER_HEIGHT = 160; // adjust once if needed
 
@@ -40,6 +42,11 @@ const getIcon = (iconName) => {
       return <FaBriefcase className="w-5 h-5" />;
     case "FaClipboardList":
       return <FaClipboardList className="w-5 h-5" />;
+      case "FaCog":
+         return <FaCog className="w-5 h-5" />;
+         case "MdCurrencyExchange":
+          return <MdCurrencyExchange className="w-5 h-5" />;
+
     default:
       return null;
   }

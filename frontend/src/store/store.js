@@ -10,6 +10,9 @@ import vendorDeclarationReducer from "./slices/vendorDeclarationSlice";
 import vendorQuotationReducer from "./slices/vendorQuotationSlice";
 import vendorKYCStatusReducer from "./slices/vendorKYCStatusSlice";
 import vendorKYCReducer from "./slices/vendorKYCSlice";
+import currencyReducer from "./slices/currencySlice";
+import countryReducer from "./slices/countrySlice";
+import stateReducer from "./slices/stateSlice";
 
 const store = configureStore({
   reducer: {
@@ -24,6 +27,9 @@ const store = configureStore({
     vendorQuotations: vendorQuotationReducer,
     vendorKYCStatus: vendorKYCStatusReducer,
     vendorKYC: vendorKYCReducer,
+    currencies: currencyReducer,
+    countries: countryReducer,
+    states: stateReducer,
   },
 });
 

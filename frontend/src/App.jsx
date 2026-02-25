@@ -25,6 +25,12 @@ import ViewVendorKYCStatus from "./pages/admin/vendors/ViewVendorKYCStatus";
 import CreateVendorKYC from "./pages/admin/vendors/CreateVendorKYC";
 import ViewVendorKYC from "./pages/admin/vendors/ViewVendorKYC";
 import VendorMaster from "./pages/admin/vendors/VendorMaster";
+import CreateCurrency from "./pages/admin/basicsettings/CreateCurrency";
+import ViewCurrency from "./pages/admin/basicsettings/ViewCurrency";
+import CreateCountry from "./pages/admin/basicsettings/CreateCountry";
+import ViewCountry from "./pages/admin/basicsettings/ViewCountry";
+import CreateState from "./pages/admin/basicsettings/CreateState";
+import ViewState from "./pages/admin/basicsettings/ViewState";
 
 function App() {
   return (
@@ -33,6 +39,14 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin/home" element={<AdminDashboard />} />
+
+        {/* Basic Settings */}
+        <Route path="/admin/currency/create" element={<CreateCurrency />} />
+        <Route path="/admin/currency/view" element={<ViewCurrency />} />
+        <Route path="/admin/country/create" element={<CreateCountry />} />
+        <Route path="/admin/country/view" element={<ViewCountry />} />
+        <Route path="/admin/state/create" element={<CreateState />} />
+        <Route path="/admin/state/view" element={<ViewState />} />
 
         {/* Enterprise Structure */}
         <Route path="/admin/users/create" element={<CreateUser />} />

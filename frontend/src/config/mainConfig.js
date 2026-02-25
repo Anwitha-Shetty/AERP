@@ -6,6 +6,70 @@ const mainConfig = [
     iconName: "FiHome",
   },
   {
+    id: "basicSettingsMenu",
+    label: "Basic Settings",
+    iconName: "FaCog",
+    subMenu: [
+      {
+        id: "currencyMenu",
+        label: "Currency",
+        iconName: "MdCurrencyExchange",
+        subMenu: [
+          {
+            id: "createcurrencyMenu",
+            label: "Create currency",
+            path: "/admin/currency/create",
+            iconName: "MdCurrencyExchange",
+          },
+          {
+            id: "viewCurrencyMenu",
+            label: "View Currency",
+            path: "/admin/currency/view",
+            iconName: "MdCurrencyExchange",
+          },
+        ],
+      },
+      {
+        id: "countryMenu",
+        label: "Country",
+        iconName: "FiGlobe",
+        subMenu: [
+          {
+            id: "createCountryMenu",
+            label: "Create Country",
+            path: "/admin/country/create",
+            iconName: "FiGlobe",
+          },
+          {
+            id: "viewCountryMenu",
+            label: "View Country",
+            path: "/admin/country/view",
+            iconName: "FiGlobe",
+          },
+        ],
+      },
+      {
+        id: "stateMenu",
+        label: "State",
+        iconName: "FiFlag",
+        subMenu: [
+          {
+            id: "createstateMenu",
+            label: "Create State",
+            path: "/admin/state/create",
+            iconName: "FiFlag",
+          },
+          {
+            id: "viewstateMenu",
+            label: "View State",
+            path: "/admin/state/view",
+            iconName: "FiFlag",
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: "enterpriseStructureMenu",
     label: "Enterprise Structure",
     iconName: "FaBuilding",
