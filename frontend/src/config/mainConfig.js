@@ -1,7 +1,7 @@
 const FAVORITES_KEY = "aerp_favorites";
 
 /* ===============================
-   FAVORITES STORAGE FUNCTIONS
+   FAVORITES STORAGE FUNCTIONS cv  
 ================================ */
 
 export const getFavorites = () => {
