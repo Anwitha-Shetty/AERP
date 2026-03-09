@@ -92,12 +92,15 @@ const AdminSidebar = () => {
   const dispatch = useDispatch();
 
   const [popupOpen, setPopupOpen] = useState(false);
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const [popupType, setPopupType] = useState("");
   const [selectedMenu, setSelectedMenu] = useState(null);
 
   const { openMenus, searchCode, codeMap } = useSelector(
     (state) => state.sidebar,
   );
+
+  const [collapsed, setCollapsed] = useState(false);
 
   /* AUTO OPEN ACTIVE MENU */
   useEffect(() => {
@@ -111,7 +114,16 @@ const AdminSidebar = () => {
 
     const findAndOpenParents = (menus, parents = []) => {
       menus.forEach((menu) => {
-        if (menu.path === activePath) {
+        const isVendorProfile = activePath.startsWith(
+          "/admin/vendors/profile/",
+        );
+
+        const isMatch =
+          menu.path === activePath ||
+          activePath.startsWith(menu.path) ||
+          (menu.path === "/admin/vendor-master" && isVendorProfile);
+
+        if (isMatch) {
           parents.forEach((p) => (newOpenMenus[p] = true));
         }
 
@@ -125,7 +137,6 @@ const AdminSidebar = () => {
     dispatch(setOpenMenus(newOpenMenus));
   }, [location.pathname, dispatch]);
 
-  /* FETCH T-CODE MAP */
   useEffect(() => {
     const fetchNavigation = async () => {
       try {
@@ -177,13 +188,39 @@ const AdminSidebar = () => {
     }
   };
 
-  const getLinkClass = (path) => {
+  const sidebarWidth = collapsed ? "w-[90px]" : "w-[350px]";
+  const contentMargin = collapsed ? "ml-[90px]" : "ml-[350px]";
+
+  // const getEffectivePath = () => {
+  //   if (location.pathname.startsWith("/admin/users/profile")) {
+  //     return "/admin/users";
+  //   }
+  //   return location.pathname;
+  // };
+
+  const getMenuClass = (path) => {
     const activePath = location.pathname;
 
-    return `flex items-center gap-3 px-2 py-1 rounded-md cursor-pointer transition ${
-      activePath === path ? "bg-amber-100 text-gray-700" : "text-gray-700"
+    return `flex items-center justify-between w-full px-2 py-1 rounded-md cursor-pointer transition ${
+      activePath === path ? "bg-amber-100 text-gray-800" : "text-gray-800"
     }`;
   };
+
+  const isPathActive = (path) => {
+    const activePath = location.pathname;
+
+    if (!path) return false;
+
+    return activePath === path || activePath.startsWith(path);
+  };
+
+  const getLinkClass = (path) => {
+    const activePath = location.pathname;
+    return `flex items-center gap-3 px-2 py-1 rounded-md cursor-pointer transition ${
+      isPathActive(path) ? "bg-amber-100 text-gray-700" : "text-gray-700"
+    }`;
+  };
+
   const renderMenu = (menu) => {
     const isOpen = openMenus[menu.id];
 
@@ -302,7 +339,7 @@ const AdminSidebar = () => {
                 dispatch(setSearchCode(e.target.value.toUpperCase()))
               }
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="px-3 w-14 h-8 outline-none"
+              className="px-2 w-14 h-8 outline-none"
             />
 
             <button
@@ -396,7 +433,35 @@ const AdminSidebar = () => {
         </nav>
       </aside>
 
-      {/* CONTENT */}
+      {showLogoutPopup && (
+        <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
+          <div className="bg-white px-6 py-4 rounded-md w-11/12 max-w-xs shadow-md border border-gray-300">
+            <div className="flex justify-center mb-1">
+              <FiIcons.FiAlertTriangle className="text-amber-400 text-4xl" />
+            </div>
+
+            <h2 className="text-lg font-semibold text-center mb-2 whitespace-nowrap">
+              Are you sure you want to exit?
+            </h2>
+
+            <div className="flex justify-center gap-4 mt-2">
+              <button
+                onClick={handleLogout}
+                className="bg-amber-400 text-black font-medium px-3 py-1.5 rounded-md cursor-pointer"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setShowLogoutPopup(false)}
+                className="bg-gray-600 text-white font-medium px-3 py-1.5 rounded-md cursor-pointer"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main
         className="ml-[325px] p-6 transition-all duration-300"
         style={{ marginTop: HEADER_HEIGHT }}

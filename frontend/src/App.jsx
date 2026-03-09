@@ -55,6 +55,8 @@ import ViewStoragelocationtype from "./pages/admin/warehouse/ViewStoragelocation
 import CreateMaterialmovement from "./pages/admin/warehouse/CreateMaterialmovement";
 import ViewMaterialmovements from "./pages/admin/warehouse/ViewMaterialmovement";
 import CreateTransactionstatus from "./pages/admin/warehouse/CreateTransactionstatus";
+import VendorProfile from "./pages/admin/vendors/VendorProfile";
+
 
 function App() {
   return (
@@ -114,7 +116,6 @@ function App() {
         <Route path="/admin/users/view" element={<ViewUsers />} />
         <Route path="/admin/company/create" element={<CreateCompany />} />
         <Route path="/admin/company/view" element={<ViewCompany />} />
-
         {/* Vendors */}
         <Route
           path="/admin/vendor-types/create"
@@ -158,6 +159,7 @@ function App() {
         <Route path="/admin/vendor-kyc/create" element={<CreateVendorKYC />} />
         <Route path="/admin/vendor-kyc/view" element={<ViewVendorKYC />} />
         <Route path="/admin/vendor-master" element={<VendorMaster />} />
+        <Route path="/admin/vendors/profile/:id" element={<VendorProfile />} />
 
         {/* Materials */}
         <Route path="/admin/material-groups" element={<MaterialGroups />} />
