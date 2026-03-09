@@ -19,7 +19,7 @@ export const createCurrency = createAsyncThunk(
   async (formData, { dispatch, rejectWithValue }) => {
     try {
       const res = await api.post("/people/currency/", formData);
-      dispatch(fetchCompanies());
+      dispatch(fetchCurriences());
       return {
         data: res.data,
         status: res.status,
@@ -74,38 +74,11 @@ export const deleteCurrency = createAsyncThunk(
   },
 );
 
-/* ================= FK DROPDOWNS ================= */
-export const fetchUsers = createAsyncThunk(
-  "currencies/fetchUsers",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/people/user/");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data);
-    }
-  },
-);
-
-export const fetchCompanies = createAsyncThunk(
-  "currencies/fetchCompanies",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/people/company/");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data);
-    }
-  },
-);
-
 /* ================= SLICE ================= */
 const currencySlice = createSlice({
   name: "currencies",
   initialState: {
     currencies: [],
-    users: [],
-    companies: [],
     loading: false,
     error: null,
   },
@@ -122,12 +95,6 @@ const currencySlice = createSlice({
       .addCase(fetchCurriences.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      .addCase(fetchUsers.fulfilled, (state, action) => {
-        state.users = action.payload;
-      })
-      .addCase(fetchCompanies.fulfilled, (state, action) => {
-        state.companies = action.payload;
       });
   },
 });

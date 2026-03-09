@@ -2,11 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { useEffect, useState } from "react";
-import {
-  MdCurrencyExchange,
-  MdKeyboardArrowLeft,
-  MdKeyboardArrowRight,
-} from "react-icons/md";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
   FiArrowLeft,
@@ -16,19 +12,20 @@ import {
   FiInfo,
   FiPlus,
   FiSearch,
+  FiUser,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchCurriences,
-  updateCurrency,
-  deleteCurrency,
-} from "../../../store/slices/currencySlice";
+  fetchUsertypes,
+  updateUsertype,
+  deleteUsertype,
+} from "../../../store/slices/usertypeSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
 
-const ViewCurrency = () => {
+const ViewUsertype = () => {
   const dispatch = useDispatch();
-  const { currencies, loading } = useSelector((state) => state.currencies);
+  const { usertypes, loading } = useSelector((state) => state.usertypes);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,11 +33,11 @@ const ViewCurrency = () => {
   const rowsPerPage = 5;
 
   useEffect(() => {
-    dispatch(fetchCurriences());
+    dispatch(fetchUsertypes());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+  const [selectedUsertypes, setSelectedUsertypes] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,15 +53,15 @@ const ViewCurrency = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [selectedUsertype, setSelectedUsertype] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    currency_name: "",
-    currency_code: "",
-    currency_symbol: "",
+    type: "",
+    type_code: "",
+    type_description: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -102,10 +99,10 @@ const ViewCurrency = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedUsertypes.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedCurrencies),
-          fullLabel: selectedCurrencies.join(", "),
+          label: formatIdsWithEllipsis(selectedUsertypes),
+          fullLabel: selectedUsertypes.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -143,8 +140,8 @@ const ViewCurrency = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedCurrency?.id) {
-      updateBreadcrumbs("View", selectedCurrency.id);
+    } else if (showConfirm && selectedUsertype?.id) {
+      updateBreadcrumbs("View", selectedUsertype.id);
     } else {
       updateBreadcrumbs();
     }
@@ -153,9 +150,9 @@ const ViewCurrency = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedCurrencies,
+    selectedUsertypes,
     editId,
-    selectedCurrency,
+    selectedUsertype,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -176,12 +173,12 @@ const ViewCurrency = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleOpenEdit = (currency) => {
-    setEditId(currency.id);
+  const handleOpenEdit = (usertype) => {
+    setEditId(usertype.id);
     setFormData({
-      currency_name: currency.currency_name || "",
-      currency_code: currency.currency_code || "",
-      currency_symbol: currency.currency_symbol || "",
+      type: usertype.type || "",
+      type_code: usertype.type_code || "",
+      type_description: usertype.type_description || "",
     });
 
     setShowEditModal(true);
@@ -198,11 +195,7 @@ const ViewCurrency = () => {
       }
     });
 
-    if (
-      !formData.currency_name ||
-      !formData.currency_code ||
-      !formData.currency_symbol
-    ) {
+    if (!formData.type || !formData.type_code || !formData.type_description) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
       return;
@@ -210,13 +203,13 @@ const ViewCurrency = () => {
 
     try {
       const res = await dispatch(
-        updateCurrency({ id: editId, formData: data }),
+        updateUsertype({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Currency updated successfully!", "success");
+        showTemporaryMessage("User Type updated successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("Currency update accepted!", "success");
+        showTemporaryMessage("User Type update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -250,7 +243,7 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update Currency!", "error");
+        showTemporaryMessage("Failed to update User Type!", "error");
       }
     }
   };
@@ -260,9 +253,9 @@ const ViewCurrency = () => {
     setEditId(null);
 
     setFormData({
-      currency_name: "",
-      currency_code: "",
-      currency_symbol: "",
+      type: "",
+      type_code: "",
+      type_description: "",
     });
   };
 
@@ -274,32 +267,32 @@ const ViewCurrency = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedCurrencies.length === 0) return;
+    if (selectedUsertypes.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedUsertypes.length > 0) {
         const res = await Promise.all(
-          selectedCurrencies.map((id) => dispatch(deleteCurrency(id)).unwrap()),
+          selectedUsertypes.map((id) => dispatch(deleteUsertype(id)).unwrap()),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage("User Type deleted successfully!", "success");
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Currency delete accepted!", "success");
+          showTemporaryMessage("User Type delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedCurrencies([]);
+        setSelectedUsertypes([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteCurrency(deleteId)).unwrap();
+        const res = await dispatch(deleteUsertype(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage("User Type deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("Curenncy delete accepted!", "success");
+          showTemporaryMessage("User Type delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -335,30 +328,28 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete Currency!", "error");
+        showTemporaryMessage("Failed to delete User Type!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredCurrencies = currencies.filter((currency) => {
+  const filteredUsertypes = usertypes.filter((usertype) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
 
     return (
-      normalize(currency?.currency_code).includes(search) ||
-      normalize(currency?.currency_name).includes(search) ||
-      normalize(currency?.currency_symbol).includes(search) ||
-      normalize(currency?.creator?.username).includes(search) ||
-      normalize(currency?.company?.company_name).includes(search)
+      normalize(usertype?.type).includes(search) ||
+      normalize(usertype?.type_code).includes(search) ||
+      normalize(usertype?.type_description).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredCurrencies.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredUsertypes.length / rowsPerPage);
 
-  const paginatedCurriences = filteredCurrencies.slice(
+  const paginatedUsertypes = filteredUsertypes.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -429,9 +420,9 @@ const ViewCurrency = () => {
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             <div className="flex items-center gap-2">
-              <MdCurrencyExchange className="text-amber-400 text-lg" />
+              <FiUser className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Currency
+                View User Type
               </h2>
             </div>
 
@@ -449,20 +440,20 @@ const ViewCurrency = () => {
               </div>
 
               <Link
-                to="/admin/currency/create"
+                to="/admin/user_type/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Currency
+                <FiPlus /> Create User Type
               </Link>
 
-              {selectedCurrencies.length > 1 && (
+              {selectedUsertypes.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedCurrencies.length}
+                    {selectedUsertypes.length}
                   </span>
                 </button>
               )}
@@ -477,21 +468,21 @@ const ViewCurrency = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredCurrencies.length <= 1 ? (
+                      {filteredUsertypes.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredCurrencies.length > 1 &&
-                            selectedCurrencies.length ===
-                              filteredCurrencies.length
+                            filteredUsertypes.length > 1 &&
+                            selectedUsertypes.length ===
+                              filteredUsertypes.length
                           }
                           onChange={(e) =>
-                            setSelectedCurrencies(
+                            setSelectedUsertypes(
                               e.target.checked
-                                ? filteredCurrencies.map(
-                                    (currency) => currency.id,
+                                ? filteredUsertypes.map(
+                                    (usertype) => usertype.id,
                                   )
                                 : [],
                             )
@@ -500,21 +491,16 @@ const ViewCurrency = () => {
                         />
                       )}
                     </th>
-                    {[
-                      "CURRENCY CODE",
-                      "CURRENCY NAME",
-                      "CURRENCY SYMBOL",
-                      "CREATOR",
-                      "COMPANY",
-                      "ACTIONS",
-                    ].map((label, idx) => (
-                      <th
-                        key={idx}
-                        className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap"
-                      >
-                        {label}
-                      </th>
-                    ))}
+                    {["USER TYPE ", "TYPE CODE", "DESCRIPTION", "ACTIONS"].map(
+                      (label, idx) => (
+                        <th
+                          key={idx}
+                          className="px-2 py-2 font-medium border border-gray-200 text-center sticky top-0 z-20 whitespace-nowrap"
+                        >
+                          {label}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
 
@@ -530,46 +516,40 @@ const ViewCurrency = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredCurrencies.length > 0 ? (
-                    paginatedCurriences.map((currency) => (
+                  ) : filteredUsertypes.length > 0 ? (
+                    paginatedUsertypes.map((usertype) => (
                       <tr
-                        key={currency.id}
+                        key={usertype.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedCurrencies.includes(currency.id)}
+                            checked={selectedUsertypes.includes(usertype.id)}
                             onChange={() =>
-                              setSelectedCurrencies((prev) =>
-                                prev.includes(currency.id)
-                                  ? prev.filter((x) => x !== currency.id)
-                                  : [...prev, currency.id],
+                              setSelectedUsertypes((prev) =>
+                                prev.includes(usertype.id)
+                                  ? prev.filter((x) => x !== usertype.id)
+                                  : [...prev, usertype.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_code || "--"}
+                          {usertype?.type || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_name || "--"}
+                          {usertype?.type_code || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_symbol || "--"}
-                        </td>
-                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.creator?.username || "--"}
-                        </td>
-                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.company?.company_name || "--"}
+                          {usertype?.type_description || "--"}
                         </td>
 
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(currency)}
+                              onClick={() => handleOpenEdit(usertype)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -577,8 +557,8 @@ const ViewCurrency = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedCurrency(currency);
-                                updateBreadcrumbs("View", currency.id);
+                                setSelectedUsertype(usertype);
+                                updateBreadcrumbs("View", usertype.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -587,7 +567,7 @@ const ViewCurrency = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(currency.id)}
+                              onClick={() => handleDelete(usertype.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -603,7 +583,7 @@ const ViewCurrency = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-400 border border-gray-200"
                       >
-                        No Currency found!
+                        No User Type found!
                       </td>
                     </tr>
                   )}
@@ -676,14 +656,14 @@ const ViewCurrency = () => {
         )}
       </main>
 
-      {showConfirm && selectedCurrency && (
+      {showConfirm && selectedUsertype && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <FiUser className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Currency
+                  View User Type
                 </h2>
               </div>
 
@@ -701,42 +681,26 @@ const ViewCurrency = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Code:
+                      User Type:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_code || "--"}
+                      {selectedUsertype?.type || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Name:
+                      Type Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_name || "--"}
+                      {selectedUsertype?.type_code || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Symbol:
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Description:
                     </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_symbol || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Creator:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.creator?.username || "--"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Company:
-                    </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.company?.company_name || "--"}
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedUsertype?.type_description || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -744,8 +708,8 @@ const ViewCurrency = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.created_at
-                        ? dayjs(selectedCurrency?.created_at).format(
+                      {selectedUsertype?.created_at
+                        ? dayjs(selectedUsertype?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -756,8 +720,8 @@ const ViewCurrency = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.updated_at
-                        ? dayjs(selectedCurrency?.updated_at).format(
+                      {selectedUsertype?.updated_at
+                        ? dayjs(selectedUsertype?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -775,9 +739,9 @@ const ViewCurrency = () => {
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <FiUser className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Currency
+                  Change User Type
                 </h2>
               </div>
               <button
@@ -791,42 +755,42 @@ const ViewCurrency = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Code <span className="text-red-500">*</span>
+                  User Type <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_code"
-                  placeholder="Enter Currency Code"
-                  value={formData.currency_code}
+                  name="type"
+                  placeholder="Enter User Type"
+                  value={formData.type}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Name <span className="text-red-500">*</span>
+                  Type Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_name"
-                  placeholder="Enter Currency Name"
-                  value={formData.currency_name}
+                  name="type_code"
+                  placeholder="Enter Type Code "
+                  value={formData.type_code}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col col-span-2">
                 <label className="form-label">
-                  Currency Symbol <span className="text-red-500">*</span>
+                  Description <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="currency_symbol"
-                  placeholder="Enter Currency Symbol"
-                  value={formData.currency_symbol}
+                <textarea
+                  name="type_description"
+                  value={formData.type_description}
                   onChange={handleChange}
-                  className="form-input"
-                />
+                  rows={2}
+                  className="flex-1 w-full textarea-input"
+                  placeholder="Enter description..."
+                ></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
@@ -867,7 +831,7 @@ const ViewCurrency = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCurrencies([]);
+                  if (isBulkDelete) setSelectedUsertypes([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -883,4 +847,4 @@ const ViewCurrency = () => {
   );
 };
 
-export default ViewCurrency;
+export default ViewUsertype;

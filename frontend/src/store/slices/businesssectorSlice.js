@@ -2,26 +2,28 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
 /* ================= COMPANIES CRUD ================= */
-export const fetchCountries = createAsyncThunk(
-  "countries/fetchCountries",
+export const fetchBusinesssectors = createAsyncThunk(
+  "businesssectors/fetchBusinesssectors",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/people/country/");
+      const res = await api.get("/people/business_sector/");
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Error fetching Countries");
+      return rejectWithValue(
+        err.response?.data || "Error fetching Business Sectors ",
+      );
     }
   },
 );
 
-export const createCountry = createAsyncThunk(
-  "countries/createCountry",
+export const createBusinesssector = createAsyncThunk(
+  "businesssectors/createBusinesssector",
   async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.post("/people/country/", formData, {
+      const res = await api.post("/people/business_sector/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchBusinesssectors());
       return {
         data: res.data,
         status: res.status,
@@ -35,14 +37,14 @@ export const createCountry = createAsyncThunk(
   },
 );
 
-export const updateCountry = createAsyncThunk(
-  "countries/updateCountry",
+export const updateBusinesssector = createAsyncThunk(
+  "businesssectors/updateBusinesssector",
   async ({ id, formData }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.put(`/people/country/${id}`, formData, {
+      const res = await api.put(`/people/business_sector/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchBusinesssectors());
       return {
         id,
         data: res.data,
@@ -57,12 +59,12 @@ export const updateCountry = createAsyncThunk(
   },
 );
 
-export const deleteCountry = createAsyncThunk(
-  "countries/deleteCountry",
+export const deleteBusinesssector = createAsyncThunk(
+  "businesssectors/deletebusinesssector",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.delete(`/people/country/${id}`);
-      dispatch(fetchCountries());
+      const res = await api.delete(`/people/business_sector/${id}`);
+      dispatch(fetchBusinesssectors());
       return {
         id,
         status: res.status,
@@ -77,28 +79,28 @@ export const deleteCountry = createAsyncThunk(
 );
 
 /* ================= SLICE ================= */
-const countrySlice = createSlice({
-  name: "countries",
+const businesssectorSlice = createSlice({
+  name: "businesssectors",
   initialState: {
-    countries: [],
+    businesssectors: [],
     loading: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCountries.pending, (state) => {
+      .addCase(fetchBusinesssectors.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCountries.fulfilled, (state, action) => {
+      .addCase(fetchBusinesssectors.fulfilled, (state, action) => {
         state.loading = false;
-        state.countries = action.payload;
+        state.businesssectors = action.payload;
       })
-      .addCase(fetchCountries.rejected, (state, action) => {
+      .addCase(fetchBusinesssectors.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export default countrySlice.reducer;
+export default businesssectorSlice.reducer;

@@ -11,7 +11,16 @@ import {
   FaFileSignature,
   FaBuilding,
   FaCog,
+  FaLanguage,
+  FaUserTie,
+  FaHome,
+  FaExchangeAlt,
 } from "react-icons/fa";
+import {
+  addToFavorites,
+  removeFromFavorites,
+  getFavorites,
+} from "../config/mainConfig";
 import mainConfig from "../config/mainConfig";
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -22,9 +31,15 @@ import {
   setOpenMenus,
   setCodeMap,
 } from "../store/slices/sidebarSlice";
-import {MdCurrencyExchange} from "react-icons/md"
+import { MdCurrencyExchange } from "react-icons/md";
+import { BsBuildingFillCheck } from "react-icons/bs";
+import { FaCity } from "react-icons/fa6";
+import { PiMapPinAreaFill } from "react-icons/pi";
+import { GiFactory } from "react-icons/gi";
+import { TbDatabaseEdit } from "react-icons/tb";
+import { FiRefreshCw } from "react-icons/fi";
 
-const HEADER_HEIGHT = 160; // adjust once if needed
+const HEADER_HEIGHT = 190; // adjust once if needed
 
 const getIcon = (iconName) => {
   if (!iconName) return null;
@@ -42,11 +57,30 @@ const getIcon = (iconName) => {
       return <FaBriefcase className="w-5 h-5" />;
     case "FaClipboardList":
       return <FaClipboardList className="w-5 h-5" />;
-      case "FaCog":
-         return <FaCog className="w-5 h-5" />;
-         case "MdCurrencyExchange":
-          return <MdCurrencyExchange className="w-5 h-5" />;
-
+    case "FaCog":
+      return <FaCog className="w-5 h-5" />;
+    case "MdCurrencyExchange":
+      return <MdCurrencyExchange className="w-5 h-5" />;
+    case "FaLanguage":
+      return <FaLanguage className="w-5 h-5" />;
+    case "BsBuildingFillCheck":
+      return <BsBuildingFillCheck className="w-5 h-5" />;
+    case "FaCity":
+      return <FaCity className="w-5 h-5" />;
+    case "FaUserTie":
+      return <FaUserTie className="w-5 h-5" />;
+    case "PiMapPinAreaFill":
+      return <PiMapPinAreaFill className="w-5 h-5" />;
+    case "GiFactory":
+      return <GiFactory className="w-5 h-5" />;
+    case "FaHome":
+      return <FaHome className="w-5 h-5" />;
+    case "TbDatabaseEdit":
+      return <TbDatabaseEdit className="w-5 h-5" />;
+    case "FaExchangeAlt":
+      return <FaExchangeAlt className="w-5 h-5" />;
+    case "FiRefreshCw":
+      return <FiRefreshCw className="w-5 h-5" />;
     default:
       return null;
   }
@@ -57,15 +91,22 @@ const AdminSidebar = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [selectedMenu, setSelectedMenu] = useState(null);
+
   const { openMenus, searchCode, codeMap } = useSelector(
     (state) => state.sidebar,
   );
 
-  const [collapsed, setCollapsed] = useState(false);
-
   /* AUTO OPEN ACTIVE MENU */
   useEffect(() => {
     const activePath = location.pathname;
+    const favorites = getFavorites();
+    const isFavoritePage = favorites.some((f) => f.path === activePath);
+
+    if (isFavoritePage) return; // don't open parents
+
     const newOpenMenus = {};
 
     const findAndOpenParents = (menus, parents = []) => {
@@ -73,6 +114,7 @@ const AdminSidebar = () => {
         if (menu.path === activePath) {
           parents.forEach((p) => (newOpenMenus[p] = true));
         }
+
         if (menu.subMenu) {
           findAndOpenParents(menu.subMenu, [...parents, menu.id]);
         }
@@ -102,6 +144,31 @@ const AdminSidebar = () => {
     fetchNavigation();
   }, [dispatch]);
 
+  const handleRightClick = (e, menu) => {
+    if (!menu.path) return;
+
+    e.preventDefault();
+
+    const favorites = getFavorites();
+    const exists = favorites.find((f) => f.id === menu.id);
+
+    setSelectedMenu(menu);
+
+    if (exists) setPopupType("remove");
+    else setPopupType("add");
+
+    setPopupOpen(true);
+  };
+  const handleConfirm = () => {
+    if (popupType === "add") addToFavorites(selectedMenu);
+    if (popupType === "remove") removeFromFavorites(selectedMenu.id);
+
+    setPopupOpen(false);
+    window.location.reload();
+  };
+
+  const handleCancel = () => setPopupOpen(false);
+
   const handleSearch = () => {
     if (searchCode.length === 3) {
       const route = codeMap[searchCode];
@@ -110,38 +177,24 @@ const AdminSidebar = () => {
     }
   };
 
-  const sidebarWidth = collapsed ? "w-[90px]" : "w-[350px]";
-  const contentMargin = collapsed ? "ml-[90px]" : "ml-[350px]";
-
-  // const getEffectivePath = () => {
-  //   if (location.pathname.startsWith("/admin/users/profile")) {
-  //     return "/admin/users";
-  //   }
-  //   return location.pathname;
-  // };
-
-  const getMenuClass = (path) => {
-    const activePath = location.pathname;
-
-    return `flex items-center justify-between w-full px-2 py-1 rounded-md cursor-pointer transition ${
-      activePath === path ? "bg-amber-100 text-gray-800" : "text-gray-800"
-    }`;
-  };
-
   const getLinkClass = (path) => {
     const activePath = location.pathname;
+
     return `flex items-center gap-3 px-2 py-1 rounded-md cursor-pointer transition ${
       activePath === path ? "bg-amber-100 text-gray-700" : "text-gray-700"
     }`;
   };
-
   const renderMenu = (menu) => {
     const isOpen = openMenus[menu.id];
 
     if (!menu.subMenu) {
       return (
         <div key={menu.id}>
-          <Link to={menu.path} className={getLinkClass(menu.path)}>
+          <Link
+            to={menu.path}
+            onContextMenu={(e) => handleRightClick(e, menu)}
+            className={getLinkClass(menu.path)}
+          >
             {getIcon(menu.iconName)}
             <span>{menu.label}</span>
           </Link>
@@ -175,7 +228,11 @@ const AdminSidebar = () => {
               renderMenu(sub)
             ) : (
               <li key={sub.path}>
-                <Link to={sub.path} className={getLinkClass(sub.path)}>
+                <Link
+                  to={sub.path}
+                  onContextMenu={(e) => handleRightClick(e, sub)}
+                  className={getLinkClass(sub.path)}
+                >
                   {getIcon(sub.iconName)}
                   <span>{sub.label}</span>
                 </Link>
@@ -214,21 +271,24 @@ const AdminSidebar = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-200 border-b border-gray-400">
-        <div
-          className="cursor-pointer mb-2 px-6 py-1.5"
-          onClick={handleLogoClick}
-        >
-          <img src={logo} alt="Logo" className="h-16 object-contain" />
-          <div className="text-xs font-semibold">
-            Enterprise Resource Structure
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-200">
+        {/* TOP MENU BAR */}
+        <div className="flex gap-6 px-4 py-1 text-sm border-b border-gray-300 bg-gray-200">
+          <span className="cursor-pointer hover:underline">Menu</span>
+          <span className="cursor-pointer hover:underline">Systems</span>
+          <span className="cursor-pointer hover:underline">Help</span>
         </div>
 
-        <div className="flex items-center px-6 py-3 border-t border-gray-400 bg-gray-100">
-          <span className="font-medium mr-12">Quick Access</span>
+        {/* LOGO */}
+        <div
+          className="cursor-pointer my-1 px-3 py-1"
+          onClick={handleLogoClick}
+        >
+          <img src={logo} alt="Logo" className="h-12 object-contain" />
+        </div>
 
+        {/* TOOLBAR */}
+        <div className="flex items-center gap-6 px-3 py-2 border-y border-gray-300 bg-gray-100">
           <div className="flex items-stretch border border-gray-400 bg-white rounded overflow-hidden">
             <span className="px-3 flex items-center border-r border-gray-300">
               T-code:
@@ -252,29 +312,128 @@ const AdminSidebar = () => {
               <FiIcons.FiSearch />
             </button>
           </div>
+          {/* Command */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiCommand className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Command Bar
+            </span>
+          </div>
+
+          {/* Search */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiSearch className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Search
+            </span>
+          </div>
+
+          {/* Back */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiArrowLeft className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Back
+            </span>
+          </div>
+
+          {/* Exit */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiLogOut className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Exit
+            </span>
+          </div>
+
+          {/* Cancel */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiXCircle className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Cancel
+            </span>
+          </div>
+
+          <div className="h-5 border-l border-gray-300"></div>
+
+          {/* New Section */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiSquare className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              New Section
+            </span>
+          </div>
+
+          {/* Previous */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiChevronLeft className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Previous
+            </span>
+          </div>
+
+          {/* Next */}
+          <div className="relative group cursor-pointer">
+            <FiIcons.FiChevronRight className="w-5 h-5" />
+            <span className="absolute hidden group-hover:block top-7 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-[2px] rounded">
+              Next
+            </span>
+          </div>
+        </div>
+        {/* QUICK ACCESS */}
+        <div className="flex items-center px-3 py-3 border-t border-gray-400 bg-gray-100">
+          <span className="font-medium mr-3">Quick Access</span>
         </div>
       </header>
 
-      {/* SIDEBAR (Correctly Positioned) */}
       <aside
-        className={`fixed left-0 ${sidebarWidth} bg-white border-r border-gray-300 transition-all duration-300`}
+        className="fixed left-0 w-[325px] transition-all duration-300 bg-gradient-to-t from-gray-100 via-gray-50 to-white border-r border-gray-300"
         style={{
           top: HEADER_HEIGHT,
           height: `calc(100vh - ${HEADER_HEIGHT}px)`,
         }}
       >
-        <nav className="h-full overflow-y-auto px-3 text-[15px] py-2">
+        <nav className="h-full overflow-y-auto px-3 text-[15px] py-2 [&::-webkit-scrollbar]:hidden scrollbar-none">
           {mainConfig.map(renderMenu)}
         </nav>
       </aside>
 
       {/* CONTENT */}
       <main
-        className={`${contentMargin} p-6 transition-all duration-300`}
+        className="ml-[325px] p-6 transition-all duration-300"
         style={{ marginTop: HEADER_HEIGHT }}
       >
         {/* Page Content */}
       </main>
+      {popupOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+          <div className="bg-white border border-gray-300 shadow-lg rounded w-[320px]">
+            <div className="px-4 py-3 border-b bg-gray-100 font-semibold">
+              Confirmation
+            </div>
+
+            <div className="p-4 text-sm text-gray-700">
+              {popupType === "add"
+                ? "Add this menu to Favorites?"
+                : "Remove this menu from Favorites?"}
+            </div>
+
+            <div className="flex justify-end gap-2 px-4 py-3 border-t bg-gray-50">
+              <button
+                onClick={handleCancel}
+                className="px-3 py-1 border border-gray-300 rounded bg-white"
+              >
+                No
+              </button>
+
+              <button
+                onClick={handleConfirm}
+                className="px-3 py-1 bg-amber-400 rounded hover:bg-amber-500"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

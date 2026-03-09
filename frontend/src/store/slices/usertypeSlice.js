@@ -2,26 +2,26 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
 /* ================= COMPANIES CRUD ================= */
-export const fetchCountries = createAsyncThunk(
-  "countries/fetchCountries",
+export const fetchUsertypes = createAsyncThunk(
+  "usertypes/fetchUsertypes",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/people/country/");
+      const res = await api.get("/people/user_type/");
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Error fetching Countries");
+      return rejectWithValue(err.response?.data || "Error fetching user types");
     }
   },
 );
 
-export const createCountry = createAsyncThunk(
-  "countries/createCountry",
+export const createUsertype = createAsyncThunk(
+  "usertypes/createUsertype",
   async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.post("/people/country/", formData, {
+      const res = await api.post("/people/user_type/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchUsertypes());
       return {
         data: res.data,
         status: res.status,
@@ -35,14 +35,14 @@ export const createCountry = createAsyncThunk(
   },
 );
 
-export const updateCountry = createAsyncThunk(
-  "countries/updateCountry",
+export const updateUsertype = createAsyncThunk(
+  "usertypes/updateUsertype",
   async ({ id, formData }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.put(`/people/country/${id}`, formData, {
+      const res = await api.put(`/people/user_type/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchUsertypes());
       return {
         id,
         data: res.data,
@@ -57,12 +57,12 @@ export const updateCountry = createAsyncThunk(
   },
 );
 
-export const deleteCountry = createAsyncThunk(
-  "countries/deleteCountry",
+export const deleteUsertype = createAsyncThunk(
+  "usertypes/deleteUsertype",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.delete(`/people/country/${id}`);
-      dispatch(fetchCountries());
+      const res = await api.delete(`/people/user_type/${id}`);
+      dispatch(fetchUsertypes());
       return {
         id,
         status: res.status,
@@ -77,28 +77,28 @@ export const deleteCountry = createAsyncThunk(
 );
 
 /* ================= SLICE ================= */
-const countrySlice = createSlice({
-  name: "countries",
+const usertypeSlice = createSlice({
+  name: "usertypes",
   initialState: {
-    countries: [],
+    usertypes: [],
     loading: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCountries.pending, (state) => {
+      .addCase(fetchUsertypes.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCountries.fulfilled, (state, action) => {
+      .addCase(fetchUsertypes.fulfilled, (state, action) => {
         state.loading = false;
-        state.countries = action.payload;
+        state.usertypes = action.payload;
       })
-      .addCase(fetchCountries.rejected, (state, action) => {
+      .addCase(fetchUsertypes.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export default countrySlice.reducer;
+export default usertypeSlice.reducer;

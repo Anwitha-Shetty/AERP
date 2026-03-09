@@ -1,12 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
-import { useEffect, useState } from "react";
-import {
-  MdCurrencyExchange,
-  MdKeyboardArrowLeft,
-  MdKeyboardArrowRight,
-} from "react-icons/md";
+import { useEffect, useRef, useState } from "react";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
   FiArrowLeft,
@@ -19,16 +15,19 @@ import {
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchCurriences,
-  updateCurrency,
-  deleteCurrency,
-} from "../../../store/slices/currencySlice";
-import { FaTimes, FaTrashAlt } from "react-icons/fa";
+  fetchCities,
+  updateCity,
+  deleteCity,
+  fetchStates,
+} from "../../../store/slices/citySlice";
+import { FaCity, FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
+import api from "../../../utils/api";
 
-const ViewCurrency = () => {
+const ViewCity = () => {
   const dispatch = useDispatch();
-  const { currencies, loading } = useSelector((state) => state.currencies);
+  const { states, cities, loading } = useSelector((state) => state.cities);
+  const citylogoRef = useRef(null);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,11 +35,12 @@ const ViewCurrency = () => {
   const rowsPerPage = 5;
 
   useEffect(() => {
-    dispatch(fetchCurriences());
+    dispatch(fetchCities());
+    dispatch(fetchStates());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+  const [selectedCities, setSelectedCities] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,17 +56,21 @@ const ViewCurrency = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [selectedCity, setSelectedCity] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    currency_name: "",
-    currency_code: "",
-    currency_symbol: "",
+    city_name: "",
+    city_code: "",
+    pin_code: "",
+    city_logo: null,
+    city_state: "",
   });
-
+  const [existingFiles, setExistingFiles] = useState({
+    city_logo: "",
+  });
   const findPathInMenu = (menu, targetPath, parents = []) => {
     for (let item of menu) {
       const newParents = [...parents, item];
@@ -102,10 +106,10 @@ const ViewCurrency = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedCities.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedCurrencies),
-          fullLabel: selectedCurrencies.join(", "),
+          label: formatIdsWithEllipsis(selectedCities),
+          fullLabel: selectedCities.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -143,8 +147,8 @@ const ViewCurrency = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedCurrency?.id) {
-      updateBreadcrumbs("View", selectedCurrency.id);
+    } else if (showConfirm && selectedCity?.id) {
+      updateBreadcrumbs("View", selectedCity.id);
     } else {
       updateBreadcrumbs();
     }
@@ -153,9 +157,9 @@ const ViewCurrency = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedCurrencies,
+    selectedCities,
     editId,
-    selectedCurrency,
+    selectedCity,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -175,13 +179,35 @@ const ViewCurrency = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+  const handleCityLogoChange = () => {
+    const file = citylogoRef.current?.files?.[0];
+    if (!file) return;
 
-  const handleOpenEdit = (currency) => {
-    setEditId(currency.id);
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+
+    if (!allowedTypes.includes(file.type)) {
+      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
+      citylogoRef.current.value = "";
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      city_logo: file,
+    }));
+  };
+
+  const handleOpenEdit = (city) => {
+    setEditId(city.id);
     setFormData({
-      currency_name: currency.currency_name || "",
-      currency_code: currency.currency_code || "",
-      currency_symbol: currency.currency_symbol || "",
+      city_name: city.city_name || "",
+      city_code: city.city_code || "",
+      pin_code: city.pin_code || "",
+      city_logo: null,
+      city_state: city.city_state?.id || "",
+    });
+    setExistingFiles({
+      city_logo: city.city_logo || "",
     });
 
     setShowEditModal(true);
@@ -193,15 +219,22 @@ const ViewCurrency = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (formData[key] !== undefined && formData[key] !== null) {
-        data.append(key, formData[key]);
+      if (key === "city_logo") {
+        if (formData.city_logo instanceof File) {
+          data.append("city_logo", formData.city_logo);
+        }
+      } else {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
       }
     });
 
     if (
-      !formData.currency_name ||
-      !formData.currency_code ||
-      !formData.currency_symbol
+      !formData.city_name ||
+      !formData.city_code ||
+      !formData.pin_code ||
+      !formData.city_state
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -210,13 +243,13 @@ const ViewCurrency = () => {
 
     try {
       const res = await dispatch(
-        updateCurrency({ id: editId, formData: data }),
+        updateCity({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Currency updated successfully!", "success");
+        showTemporaryMessage("City updated successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("Currency update accepted!", "success");
+        showTemporaryMessage("City update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -250,7 +283,7 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update Currency!", "error");
+        showTemporaryMessage("Failed to update City!", "error");
       }
     }
   };
@@ -260,12 +293,14 @@ const ViewCurrency = () => {
     setEditId(null);
 
     setFormData({
-      currency_name: "",
-      currency_code: "",
-      currency_symbol: "",
+      city_name: "",
+      city_code: "",
+      pin_code: "",
+      city_logo: null,
+      city_state: "",
     });
+    setExistingFiles({ city_logo: "" });
   };
-
   // ----------------- Delete handlers -----------------
   const handleDelete = (id) => {
     setDeleteId(id);
@@ -274,32 +309,32 @@ const ViewCurrency = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedCurrencies.length === 0) return;
+    if (selectedCities.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedCities.length > 0) {
         const res = await Promise.all(
-          selectedCurrencies.map((id) => dispatch(deleteCurrency(id)).unwrap()),
+          selectedCities.map((id) => dispatch(deleteCity(id)).unwrap()),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage("City deleted successfully!", "success");
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Currency delete accepted!", "success");
+          showTemporaryMessage("City delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedCurrencies([]);
+        setSelectedCities([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteCurrency(deleteId)).unwrap();
+        const res = await dispatch(deleteCity(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage("City deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("Curenncy delete accepted!", "success");
+          showTemporaryMessage("City delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -335,30 +370,30 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete Currency!", "error");
+        showTemporaryMessage("Failed to delete City!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredCurrencies = currencies.filter((currency) => {
+  const filteredCities = cities.filter((city) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
 
     return (
-      normalize(currency?.currency_code).includes(search) ||
-      normalize(currency?.currency_name).includes(search) ||
-      normalize(currency?.currency_symbol).includes(search) ||
-      normalize(currency?.creator?.username).includes(search) ||
-      normalize(currency?.company?.company_name).includes(search)
+      normalize(city?.city_name).includes(search) ||
+      normalize(city?.city_code).includes(search) ||
+      normalize(city?.city_state?.state_name).includes(search) ||
+      normalize(city?.creator?.username).includes(search) ||
+      normalize(city?.company?.company_name).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredCurrencies.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredCities.length / rowsPerPage);
 
-  const paginatedCurriences = filteredCurrencies.slice(
+  const paginatedCities = filteredCities.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -429,10 +464,8 @@ const ViewCurrency = () => {
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             <div className="flex items-center gap-2">
-              <MdCurrencyExchange className="text-amber-400 text-lg" />
-              <h2 className="text-lg font-semibold text-gray-700">
-                View Currency
-              </h2>
+              <FaCity className="text-amber-400 text-lg" />
+              <h2 className="text-lg font-semibold text-gray-700">View City</h2>
             </div>
 
             <div className="flex items-center gap-2">
@@ -449,20 +482,20 @@ const ViewCurrency = () => {
               </div>
 
               <Link
-                to="/admin/currency/create"
+                to="/admin/country/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Currency
+                <FiPlus /> Create City
               </Link>
 
-              {selectedCurrencies.length > 1 && (
+              {selectedCities.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedCurrencies.length}
+                    {selectedCities.length}
                   </span>
                 </button>
               )}
@@ -477,22 +510,19 @@ const ViewCurrency = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredCurrencies.length <= 1 ? (
+                      {filteredCities.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredCurrencies.length > 1 &&
-                            selectedCurrencies.length ===
-                              filteredCurrencies.length
+                            filteredCities.length > 1 &&
+                            selectedCities.length === filteredCities.length
                           }
                           onChange={(e) =>
-                            setSelectedCurrencies(
+                            setSelectedCities(
                               e.target.checked
-                                ? filteredCurrencies.map(
-                                    (currency) => currency.id,
-                                  )
+                                ? filteredCities.map((city) => city.id)
                                 : [],
                             )
                           }
@@ -501,9 +531,9 @@ const ViewCurrency = () => {
                       )}
                     </th>
                     {[
-                      "CURRENCY CODE",
-                      "CURRENCY NAME",
-                      "CURRENCY SYMBOL",
+                      "CITY CODE",
+                      "CITY NAME",
+                      "STATE",
                       "CREATOR",
                       "COMPANY",
                       "ACTIONS",
@@ -530,46 +560,46 @@ const ViewCurrency = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredCurrencies.length > 0 ? (
-                    paginatedCurriences.map((currency) => (
+                  ) : filteredCities.length > 0 ? (
+                    paginatedCities.map((city) => (
                       <tr
-                        key={currency.id}
+                        key={city.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedCurrencies.includes(currency.id)}
+                            checked={selectedCities.includes(city.id)}
                             onChange={() =>
-                              setSelectedCurrencies((prev) =>
-                                prev.includes(currency.id)
-                                  ? prev.filter((x) => x !== currency.id)
-                                  : [...prev, currency.id],
+                              setSelectedCity((prev) =>
+                                prev.includes(city.id)
+                                  ? prev.filter((x) => x !== city.id)
+                                  : [...prev, city.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_code || "--"}
+                          {city?.city_code || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_name || "--"}
+                          {city?.city_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_symbol || "--"}
+                          {city?.city_state?.state_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.creator?.username || "--"}
+                          {city?.creator?.username || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.company?.company_name || "--"}
+                          {city?.company?.company_name || "--"}
                         </td>
 
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(currency)}
+                              onClick={() => handleOpenEdit(city)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -577,8 +607,8 @@ const ViewCurrency = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedCurrency(currency);
-                                updateBreadcrumbs("View", currency.id);
+                                setSelectedCity(city);
+                                updateBreadcrumbs("View", city.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -587,7 +617,7 @@ const ViewCurrency = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(currency.id)}
+                              onClick={() => handleDelete(city.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -603,7 +633,7 @@ const ViewCurrency = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-400 border border-gray-200"
                       >
-                        No Currency found!
+                        No city found!
                       </td>
                     </tr>
                   )}
@@ -676,14 +706,14 @@ const ViewCurrency = () => {
         )}
       </main>
 
-      {showConfirm && selectedCurrency && (
+      {showConfirm && selectedCity && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <FaCity className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Currency
+                  View City
                 </h2>
               </div>
 
@@ -701,26 +731,55 @@ const ViewCurrency = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Code:
+                      City Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_code || "--"}
+                      {selectedCity?.city_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Name:
+                      City Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_name || "--"}
+                      {selectedCity?.city_code || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Symbol:
+                      Pin Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_symbol || "--"}
+                      {selectedCity?.pin_code || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      City Logo:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCity.city_logo && (
+                        <a
+                          href={
+                            selectedCity.city_logo.startsWith("http")
+                              ? selectedCity.city_logo
+                              : `${api.defaults.baseURL.replace(/\/$/, "")}${selectedCity.city_logo}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-400"
+                        >
+                          {selectedCity.city_logo.split("/").pop()}
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      State:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedCity?.city_state?.state_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -728,7 +787,7 @@ const ViewCurrency = () => {
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.creator?.username || "--"}
+                      {selectedCity?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -736,7 +795,7 @@ const ViewCurrency = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.company?.company_name || "--"}
+                      {selectedCity?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -744,8 +803,8 @@ const ViewCurrency = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.created_at
-                        ? dayjs(selectedCurrency?.created_at).format(
+                      {selectedCity?.created_at
+                        ? dayjs(selectedCity?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -756,8 +815,8 @@ const ViewCurrency = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.updated_at
-                        ? dayjs(selectedCurrency?.updated_at).format(
+                      {selectedCity?.updated_at
+                        ? dayjs(selectedCity?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -775,9 +834,9 @@ const ViewCurrency = () => {
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <FaCity className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Currency
+                  Change City
                 </h2>
               </div>
               <button
@@ -791,42 +850,87 @@ const ViewCurrency = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Code <span className="text-red-500">*</span>
+                  City Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_code"
-                  placeholder="Enter Currency Code"
-                  value={formData.currency_code}
+                  name="city_name"
+                  placeholder="Enter City Code"
+                  value={formData.city_name}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Name <span className="text-red-500">*</span>
+                  City Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_name"
-                  placeholder="Enter Currency Name"
-                  value={formData.currency_name}
+                  name="city_code"
+                  placeholder="Enter City Code"
+                  value={formData.city_code}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Symbol <span className="text-red-500">*</span>
+                  Pin Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_symbol"
-                  placeholder="Enter Currency Symbol"
-                  value={formData.currency_symbol}
+                  name="pin_code"
+                  placeholder="Enter Pin Code"
+                  value={formData.pin_code}
                   onChange={handleChange}
                   className="form-input"
                 />
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">
+                  City Logo <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  name="city_logo"
+                  accept="image/png, image/jpeg"
+                  ref={citylogoRef}
+                  onChange={handleCityLogoChange}
+                  className="form-input"
+                />
+                {existingFiles.city_logo && (
+                  <a
+                    href={
+                      existingFiles.city_logo.startsWith("http")
+                        ? existingFiles.city_logo
+                        : `${api.defaults.baseURL.replace(/\/$/, "")}${existingFiles.city_logo}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400"
+                  >
+                    {existingFiles.city_logo.split("/").pop()}
+                  </a>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="city_state"
+                  value={formData.city_state}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {states.map((state) => (
+                    <option key={state.id} value={state.id}>
+                      {state.state_name} - {state.state_code}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
@@ -867,7 +971,7 @@ const ViewCurrency = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCurrencies([]);
+                  if (isBulkDelete) setSelectedCities([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -883,4 +987,4 @@ const ViewCurrency = () => {
   );
 };
 
-export default ViewCurrency;
+export default ViewCity;

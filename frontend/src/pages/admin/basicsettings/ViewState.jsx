@@ -14,7 +14,6 @@ import {
   FiInfo,
   FiPlus,
   FiSearch,
-  FiUsers,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -22,8 +21,6 @@ import {
   updateState,
   deleteState,
   fetchCountries,
-  fetchUsers,
-  fetchCompanies,
 } from "../../../store/slices/stateSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
@@ -31,9 +28,7 @@ import api from "../../../utils/api";
 
 const ViewState = () => {
   const dispatch = useDispatch();
-  const { countries, users, companies, states, loading } = useSelector(
-    (state) => state.states,
-  );
+  const { countries, states, loading } = useSelector((state) => state.states);
   const statelogoRef = useRef(null);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
@@ -44,8 +39,6 @@ const ViewState = () => {
   useEffect(() => {
     dispatch(fetchStates());
     dispatch(fetchCountries());
-    dispatch(fetchUsers());
-    dispatch(fetchCompanies());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
@@ -75,8 +68,6 @@ const ViewState = () => {
     state_code: "",
     state_logo: null,
     state_country: "",
-    creator: "",
-    company: "",
   });
   const [existingFiles, setExistingFiles] = useState({
     state_logo: "",
@@ -215,8 +206,6 @@ const ViewState = () => {
       state_country: state.state_country?.id || "",
       state_logo: null,
       country: state.country?.id || "",
-      creator: state.creator?.id || "",
-      company: state.company?.id || "",
     });
     setExistingFiles({
       state_logo: state.state_logo || "",
@@ -245,9 +234,7 @@ const ViewState = () => {
     if (
       !formData.state_name ||
       !formData.state_code ||
-      !formData.state_country ||
-      !formData.creator ||
-      !formData.company
+      !formData.state_country
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -310,8 +297,6 @@ const ViewState = () => {
       state_code: "",
       state_logo: null,
       state_country: "",
-      creator: "",
-      company: "",
     });
     setExistingFiles({ state_logo: "" });
   };
@@ -923,42 +908,6 @@ const ViewState = () => {
                   {countries.map((country) => (
                     <option key={country.id} value={country.id}>
                       {country.country_code} - {country.country_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Creator <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="creator"
-                  value={formData.creator}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.username} - {user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Company <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {companies.map((cp) => (
-                    <option key={cp.id} value={cp.id}>
-                      {cp.company_code} - {cp.company_name}
                     </option>
                   ))}
                 </select>

@@ -2,26 +2,26 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
 /* ================= COMPANIES CRUD ================= */
-export const fetchCountries = createAsyncThunk(
-  "countries/fetchCountries",
+export const fetchCompanystatuses = createAsyncThunk(
+  "companystatuses/fetchCompanystatuses",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/people/country/");
+      const res = await api.get("/people/company_status/");
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Error fetching Countries");
+      return rejectWithValue(
+        err.response?.data || "Error fetching Country Status",
+      );
     }
   },
 );
 
-export const createCountry = createAsyncThunk(
-  "countries/createCountry",
+export const createCompanystatus = createAsyncThunk(
+  "companystatuses/createCompanystatus",
   async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.post("/people/country/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      dispatch(fetchCountries());
+      const res = await api.post("/people/company_status/", formData);
+      dispatch(fetchCompanystatuses());
       return {
         data: res.data,
         status: res.status,
@@ -35,14 +35,14 @@ export const createCountry = createAsyncThunk(
   },
 );
 
-export const updateCountry = createAsyncThunk(
-  "countries/updateCountry",
+export const updateCompanystatus = createAsyncThunk(
+  "companystatuses/updateCompanystatus",
   async ({ id, formData }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.put(`/people/country/${id}`, formData, {
+      const res = await api.put(`/people/company_status/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchCompanystatuses());
       return {
         id,
         data: res.data,
@@ -57,12 +57,12 @@ export const updateCountry = createAsyncThunk(
   },
 );
 
-export const deleteCountry = createAsyncThunk(
-  "countries/deleteCountry",
+export const deleteCompanystatus = createAsyncThunk(
+  "companystatuses/deleteCompanystatus",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.delete(`/people/country/${id}`);
-      dispatch(fetchCountries());
+      const res = await api.delete(`/people/company_status/${id}`);
+      dispatch(fetchCompanystatuses());
       return {
         id,
         status: res.status,
@@ -77,28 +77,28 @@ export const deleteCountry = createAsyncThunk(
 );
 
 /* ================= SLICE ================= */
-const countrySlice = createSlice({
-  name: "countries",
+const companystatusSlice = createSlice({
+  name: "companystatuses",
   initialState: {
-    countries: [],
+    companystatuses: [],
     loading: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCountries.pending, (state) => {
+      .addCase(fetchCompanystatuses.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCountries.fulfilled, (state, action) => {
+      .addCase(fetchCompanystatuses.fulfilled, (state, action) => {
         state.loading = false;
-        state.countries = action.payload;
+        state.companystatuses = action.payload;
       })
-      .addCase(fetchCountries.rejected, (state, action) => {
+      .addCase(fetchCompanystatuses.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export default countrySlice.reducer;
+export default companystatusSlice.reducer;

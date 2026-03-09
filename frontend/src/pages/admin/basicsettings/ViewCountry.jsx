@@ -17,15 +17,12 @@ import {
   FiInfo,
   FiPlus,
   FiSearch,
-  FiUsers,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchCountries,
   updateCountry,
   deleteCountry,
-  fetchUsers,
-  fetchCompanies,
 } from "../../../store/slices/countrySlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
@@ -33,9 +30,7 @@ import api from "../../../utils/api";
 
 const ViewCountry = () => {
   const dispatch = useDispatch();
-  const { users, companies, countries, loading } = useSelector(
-    (state) => state.countries,
-  );
+  const { countries, loading } = useSelector((state) => state.countries);
   const countrylogoRef = useRef(null);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
@@ -45,8 +40,6 @@ const ViewCountry = () => {
 
   useEffect(() => {
     dispatch(fetchCountries());
-    dispatch(fetchUsers());
-    dispatch(fetchCompanies());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
@@ -76,8 +69,6 @@ const ViewCountry = () => {
     country_code: "",
     country_mobile: "",
     country_logo: null,
-    creator: "",
-    company: "",
   });
   const [existingFiles, setExistingFiles] = useState({
     country_logo: "",
@@ -215,8 +206,6 @@ const ViewCountry = () => {
       country_name: country.country_name || "",
       country_mobile: country.country_mobile || "",
       country_logo: null,
-      creator: country.creator?.id || "",
-      company: country.company?.id || "",
     });
     setExistingFiles({
       country_logo: country.country_logo || "",
@@ -232,7 +221,7 @@ const ViewCountry = () => {
 
     Object.keys(formData).forEach((key) => {
       if (key === "country_logo") {
-        if (formData.user_photo instanceof File) {
+        if (formData.country_logo instanceof File) {
           data.append("country_logo", formData.country_logo);
         }
       } else {
@@ -245,9 +234,7 @@ const ViewCountry = () => {
     if (
       !formData.country_code ||
       !formData.country_name ||
-      !formData.country_mobile ||
-      !formData.creator ||
-      !formData.company
+      !formData.country_mobile
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -310,8 +297,6 @@ const ViewCountry = () => {
       country_code: "",
       country_mobile: "",
       country_logo: null,
-      creator: "",
-      company: "",
     });
     setExistingFiles({ country_logo: "" });
   };
@@ -478,7 +463,7 @@ const ViewCountry = () => {
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             <div className="flex items-center gap-2">
-              <MdCurrencyExchange className="text-amber-400 text-lg" />
+              <FiGlobe className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
                 View Country
               </h2>
@@ -923,42 +908,6 @@ const ViewCountry = () => {
                   </a>
                 )}
               </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Creator <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="creator"
-                  value={formData.creator}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.username} - {user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label className="form-label">
-                  Company <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">Select</option>
-                  {companies.map((cp) => (
-                    <option key={cp.id} value={cp.id}>
-                      {cp.company_code} - {cp.company_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
               <button
@@ -998,7 +947,7 @@ const ViewCountry = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCurrencies([]);
+                  if (isBulkDelete) setSelectedCountries([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}

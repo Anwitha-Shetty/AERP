@@ -89,38 +89,12 @@ export const fetchCountries = createAsyncThunk(
   },
 );
 
-export const fetchUsers = createAsyncThunk(
-  "states/fetchUsers",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/people/user/");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data);
-    }
-  },
-);
-
-export const fetchCompanies = createAsyncThunk(
-  "states/fetchCompanies",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await api.get("/people/company/");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data);
-    }
-  },
-);
-
 /* ================= SLICE ================= */
 const stateSlice = createSlice({
   name: "states",
   initialState: {
     states: [],
     countries: [],
-    users: [],
-    companies: [],
     loading: false,
     error: null,
   },
@@ -140,12 +114,6 @@ const stateSlice = createSlice({
       })
       .addCase(fetchCountries.fulfilled, (state, action) => {
         state.countries = action.payload;
-      })
-      .addCase(fetchUsers.fulfilled, (state, action) => {
-        state.users = action.payload;
-      })
-      .addCase(fetchCompanies.fulfilled, (state, action) => {
-        state.companies = action.payload;
       });
   },
 });

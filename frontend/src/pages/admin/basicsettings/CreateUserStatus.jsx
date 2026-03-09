@@ -1,20 +1,18 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import AdminSidebar from "./../../../components/AdminSidebar";
-import { createCountry } from "../../../store/slices/countrySlice";
+import AdminSidebar from "../../../components/AdminSidebar";
+import { createUserstatus } from "../../../store/slices/userstatusSlice";
 import { useDispatch } from "react-redux";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import mainConfig from "../../../config/mainConfig";
-import { FiGlobe, FiInfo, FiSave } from "react-icons/fi";
+import { FiInfo, FiSave, FiUsers } from "react-icons/fi";
 
-const CreateCountry = () => {
+const CreateUserStatus = () => {
   const dispatch = useDispatch();
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [actionType, setActionType] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-
-  const countrylogoRef = useRef(null);
 
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -24,10 +22,9 @@ const CreateCountry = () => {
   };
 
   const [formData, setFormData] = useState({
-    country_name: "",
-    country_code: "",
-    country_mobile: "",
-    country_logo: null,
+    status: "",
+    status_code: "",
+    status_description: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -79,27 +76,14 @@ const CreateCountry = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCountryLogoChange = () => {
-    const file = countrylogoRef.current?.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-
-    if (!allowedTypes.includes(file.type)) {
-      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      countrylogoRef.current.value = "";
-      return;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionType("Save");
 
     if (
-      !formData.country_name ||
-      !formData.currency_code ||
-      !formData.country_mobile
+      !formData.status ||
+      !formData.status_code ||
+      !formData.status_description
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -114,26 +98,20 @@ const CreateCountry = () => {
       }
     });
 
-    const file = countrylogoRef.current?.files?.[0];
-    if (file) {
-      submitData.append("country_logo", file);
-    }
-
     try {
-      const res = await dispatch(createCountry(submitData)).unwrap();
+      const res = await dispatch(createUserstatus(submitData)).unwrap();
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Country created successfully!", "success");
+        showTemporaryMessage("User Status created successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("Country create accepted!", "success");
+        showTemporaryMessage("User Status create accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
       }
       setFormData({
-        country_name: "",
-        country_code: "",
-        country_mobile: "",
-        country_logo: "",
+        status: "",
+        status_code: "",
+        status_description: "",
       });
     } catch (error) {
       console.log("Error:", error);
@@ -161,7 +139,7 @@ const CreateCountry = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to create country!", "error");
+        showTemporaryMessage("Failed to create User Status!", "error");
       }
     }
 
@@ -230,9 +208,9 @@ const CreateCountry = () => {
                   <div className="animate-fadeIn rounded border border-gray-200">
                     <div className="px-6 flex justify-between items-center border-b-2 border-gray-200">
                       <div className="flex items-center gap-2 mt-4 pb-1">
-                        <FiGlobe className="text-amber-400 text-lg" />
+                        <FiUsers className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create Country
+                          Create User Status
                         </h2>
                       </div>
 
@@ -248,56 +226,42 @@ const CreateCountry = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Code <span className="text-red-500">*</span>
+                            Status <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="country_code"
-                            placeholder="Enter Country Code"
-                            value={formData.country_code}
+                            name="status"
+                            placeholder="Enter Status"
+                            value={formData.status}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Name <span className="text-red-500">*</span>
+                            Status Code <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="country_name"
-                            placeholder="Enter Country name"
-                            value={formData.country_name}
+                            name="status_code"
+                            placeholder="Enter Status Code"
+                            value={formData.status_code}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-start col-span-2">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country mobile{" "}
-                            <span className="text-red-500">*</span>
+                            Description <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="country_mobile"
-                            placeholder="Enter Country Code"
-                            value={formData.country_mobile}
+                          <textarea
+                            name="status_description"
+                            value={formData.status_description}
                             onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Logo <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="file"
-                            ref={countrylogoRef}
-                            name="country_logo"
-                            accept="image/png, image/jpeg"
-                            onChange={handleCountryLogoChange}
-                            className="flex-1 w-full form-input"
-                          />
+                            rows={2}
+                            className="flex-1 w-full textarea-input"
+                            placeholder="Enter user status description..."
+                          ></textarea>
                         </div>
                       </div>
                     </div>
@@ -331,4 +295,4 @@ const CreateCountry = () => {
   );
 };
 
-export default CreateCountry;
+export default CreateUserStatus;

@@ -1,20 +1,21 @@
+import { useEffect, useState } from "react";
+import AdminSidebar from "../../../components/AdminSidebar";
 import { useLocation, useNavigate } from "react-router-dom";
-import AdminSidebar from "./../../../components/AdminSidebar";
-import { createCountry } from "../../../store/slices/countrySlice";
-import { useDispatch } from "react-redux";
-import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
-import { useEffect, useRef, useState } from "react";
 import mainConfig from "../../../config/mainConfig";
-import { FiGlobe, FiInfo, FiSave } from "react-icons/fi";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
+import { FiInfo, FiSave, FiHome, FiRefreshCw } from "react-icons/fi";
 
-const CreateCountry = () => {
+import { createTransactionstatus } from "../../../store/slices/transactionstatusSlice";
+
+import { useDispatch, useSelector } from "react-redux";
+
+const CreateTransactionstatus = () => {
   const dispatch = useDispatch();
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [actionType, setActionType] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
-  const countrylogoRef = useRef(null);
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
+  const [actionType, setActionType] = useState("");
 
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -24,16 +25,19 @@ const CreateCountry = () => {
   };
 
   const [formData, setFormData] = useState({
-    country_name: "",
-    country_code: "",
-    country_mobile: "",
-    country_logo: null,
+    status_name: "",
+    status_code: "",
+    description: "",
+    is_active: "",
+    sort_order: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
     for (let item of menu) {
       const newParents = [...parents, item];
+
       if (item.path === targetPath) return newParents;
+
       if (item.subMenu) {
         const result = findPathInMenu(item.subMenu, targetPath, newParents);
         if (result) return result;
@@ -45,12 +49,15 @@ const CreateCountry = () => {
   useEffect(() => {
     const basePath = location.pathname;
     const menuPath = findPathInMenu(mainConfig, basePath) || [];
+
     const breadcrumbArray = menuPath.map((i) => ({
       label: i.label,
       path: i.path,
     }));
+
     if (actionType === "Save")
       breadcrumbArray.push({ label: "Save", path: null });
+
     setBreadcrumbs(breadcrumbArray);
   }, [location.pathname, actionType]);
 
@@ -79,29 +86,12 @@ const CreateCountry = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCountryLogoChange = () => {
-    const file = countrylogoRef.current?.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-
-    if (!allowedTypes.includes(file.type)) {
-      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      countrylogoRef.current.value = "";
-      return;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionType("Save");
 
-    if (
-      !formData.country_name ||
-      !formData.currency_code ||
-      !formData.country_mobile
-    ) {
-      showTemporaryMessage("Please fill in all required fields!", "error");
+    if (!formData.status_name || !formData.status_code) {
+      showTemporaryMessage("Please fill all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
       return;
     }
@@ -114,59 +104,33 @@ const CreateCountry = () => {
       }
     });
 
-    const file = countrylogoRef.current?.files?.[0];
-    if (file) {
-      submitData.append("country_logo", file);
-    }
-
     try {
-      const res = await dispatch(createCountry(submitData)).unwrap();
+      const res = await dispatch(createTransactionstatus(submitData)).unwrap();
+
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Country created successfully!", "success");
-      } else if (res.status === 202) {
-        showTemporaryMessage("Country create accepted!", "success");
+        showTemporaryMessage(
+          "Transaction Status created successfully!",
+          "success",
+        );
       } else {
-        showTemporaryMessage("Unexpected response from server.", "error");
+        showTemporaryMessage("Unexpected server response!", "error");
         return;
       }
+
       setFormData({
-        country_name: "",
-        country_code: "",
-        country_mobile: "",
-        country_logo: "",
+        status_name: "",
+        status_code: "",
+        description: "",
+        is_active: "",
+        sort_order: "",
       });
     } catch (error) {
-      console.log("Error:", error);
-
-      let errorMessages = [];
-
-      if (error?.data) {
-        const data = error.data;
-
-        Object.keys(data).forEach((key) => {
-          const value = data[key];
-
-          if (Array.isArray(value)) {
-            value.forEach((msg) => errorMessages.push(msg));
-          } else if (typeof value === "string") {
-            errorMessages.push(value);
-          }
-        });
-      }
-
-      if (errorMessages.length > 0) {
-        errorMessages.forEach((msg, i) => {
-          setTimeout(() => {
-            showTemporaryMessage(msg, "error");
-          }, i * 600);
-        });
-      } else {
-        showTemporaryMessage("Failed to create country!", "error");
-      }
+      showTemporaryMessage("Failed to create Transaction Status!", "error");
     }
 
     setTimeout(() => setActionType(""), 3000);
   };
+
   return (
     <div className="flex h-screen">
       <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
@@ -174,6 +138,7 @@ const CreateCountry = () => {
       </div>
 
       <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+        {/* Breadcrumb */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             {breadcrumbs.map((b, index) => (
@@ -188,6 +153,7 @@ const CreateCountry = () => {
                 ) : (
                   <span>{b.label}</span>
                 )}
+
                 {index < breadcrumbs.length - 1 && (
                   <span className="text-gray-400"> &gt; </span>
                 )}
@@ -195,27 +161,23 @@ const CreateCountry = () => {
             ))}
           </div>
 
-          {/* Arrows */}
           <div className="flex items-center">
             <button
               onClick={goPrev}
               className={`text-gray-400 text-lg ${
-                currentIndex <= 0
-                  ? "cursor-not-allowed opacity-50"
-                  : "cursor-pointer"
+                currentIndex <= 0 ? "opacity-50" : "cursor-pointer"
               }`}
-              disabled={currentIndex <= 0}
             >
               <MdKeyboardArrowLeft />
             </button>
+
             <button
               onClick={goNext}
               className={`text-gray-400 text-lg ${
                 currentIndex >= breadcrumbs.length - 1
-                  ? "cursor-not-allowed opacity-50"
+                  ? "opacity-50"
                   : "cursor-pointer"
               }`}
-              disabled={currentIndex >= breadcrumbs.length - 1}
             >
               <MdKeyboardArrowRight />
             </button>
@@ -230,9 +192,9 @@ const CreateCountry = () => {
                   <div className="animate-fadeIn rounded border border-gray-200">
                     <div className="px-6 flex justify-between items-center border-b-2 border-gray-200">
                       <div className="flex items-center gap-2 mt-4 pb-1">
-                        <FiGlobe className="text-amber-400 text-lg" />
+                        <FiRefreshCw className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create Country
+                          Create Transaction Status
                         </h2>
                       </div>
 
@@ -247,55 +209,84 @@ const CreateCountry = () => {
                     <div className="max-h-[255px] rounded overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Code <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="country_code"
-                            placeholder="Enter Country Code"
-                            value={formData.country_code}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Name <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="country_name"
-                            placeholder="Enter Country name"
-                            value={formData.country_name}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country mobile{" "}
+                          <label className="w-[200px] text-sm font-medium">
+                            Transaction Status Name{" "}
                             <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="country_mobile"
-                            placeholder="Enter Country Code"
-                            value={formData.country_mobile}
+                            name="status_name"
+                            value={formData.status_name}
                             onChange={handleChange}
-                            className="flex-1 w-full form-input"
+                            className="flex-1 form-input"
                           />
                         </div>
+
                         <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Logo <span className="text-red-500">*</span>
+                          <label className="w-[200px] text-sm font-medium">
+                            Transaction Status Code{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <input
-                            type="file"
-                            ref={countrylogoRef}
-                            name="country_logo"
-                            accept="image/png, image/jpeg"
-                            onChange={handleCountryLogoChange}
+                            type="text"
+                            name="status_code"
+                            value={formData.status_code}
+                            onChange={handleChange}
+                            className="flex-1 form-input"
+                          />
+                        </div>
+
+                        <div className="flex items-start col-span-2">
+                          <label className="w-[200px] text-sm font-medium">
+                            Description
+                          </label>
+                          <textarea
+                            name="description"
+                            rows={2}
+                            value={formData.description}
+                            onChange={handleChange}
+                            className="flex-1 textarea-input"
+                          />
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Active
+                          </label>
+                          <select
+                            name="is_active"
+                            value={formData.is_active}
+                            onChange={handleChange}
+                            className="flex-1 form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Sort Order
+                          </label>
+                          <input
+                            type="number"
+                            name="sort_order"
+                            value={formData.sort_order}
+                            onKeyDown={(e) => {
+                              if (["-", "+", "e", "E", "."].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              const regex = /^\d*$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            inputMode="numeric"
                             className="flex-1 w-full form-input"
                           />
                         </div>
@@ -331,4 +322,4 @@ const CreateCountry = () => {
   );
 };
 
-export default CreateCountry;
+export default CreateTransactionstatus;

@@ -1,27 +1,29 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
-/* ================= COMPANIES CRUD ================= */
-export const fetchCountries = createAsyncThunk(
-  "countries/fetchCountries",
+/* ================= CRUD ================= */
+
+export const fetchMaterialmovements = createAsyncThunk(
+  "materialmovements/fetchMaterialmovements",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/people/country/");
+      const res = await api.get("/inventory/material_movement/");
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Error fetching Countries");
+      print(e);
+      return rejectWithValue(
+        err.response?.data || "Error fetching Material Movements",
+      );
     }
   },
 );
 
-export const createCountry = createAsyncThunk(
-  "countries/createCountry",
+export const createMaterialmovement = createAsyncThunk(
+  "materialmovements/createMaterialmovement",
   async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.post("/people/country/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      dispatch(fetchCountries());
+      const res = await api.post("/inventory/material_movement/", formData);
+      dispatch(fetchMaterialmovements());
       return {
         data: res.data,
         status: res.status,
@@ -35,14 +37,12 @@ export const createCountry = createAsyncThunk(
   },
 );
 
-export const updateCountry = createAsyncThunk(
-  "countries/updateCountry",
+export const updateMaterialmovement = createAsyncThunk(
+  "materialmovements/updateMaterialmovement",
   async ({ id, formData }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.put(`/people/country/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      dispatch(fetchCountries());
+      const res = await api.put(`/inventory/material_movement/${id}`, formData);
+      dispatch(fetchMaterialmovements());
       return {
         id,
         data: res.data,
@@ -57,12 +57,12 @@ export const updateCountry = createAsyncThunk(
   },
 );
 
-export const deleteCountry = createAsyncThunk(
-  "countries/deleteCountry",
+export const deleteMaterialmovement = createAsyncThunk(
+  "materialmovements/deleteMaterialmovement",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.delete(`/people/country/${id}`);
-      dispatch(fetchCountries());
+      const res = await api.delete(`/inventory/material_movement/${id}`);
+      dispatch(fetchMaterialmovements());
       return {
         id,
         status: res.status,
@@ -77,28 +77,28 @@ export const deleteCountry = createAsyncThunk(
 );
 
 /* ================= SLICE ================= */
-const countrySlice = createSlice({
-  name: "countries",
+const materialmovementSlice = createSlice({
+  name: "materialmovements",
   initialState: {
-    countries: [],
+    materialmovements: [],
     loading: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCountries.pending, (state) => {
+      .addCase(fetchMaterialmovements.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCountries.fulfilled, (state, action) => {
+      .addCase(fetchMaterialmovements.fulfilled, (state, action) => {
         state.loading = false;
-        state.countries = action.payload;
+        state.materialmovements = action.payload;
       })
-      .addCase(fetchCountries.rejected, (state, action) => {
+      .addCase(fetchMaterialmovements.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export default countrySlice.reducer;
+export default materialmovementSlice.reducer;

@@ -1,20 +1,22 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "./../../../components/AdminSidebar";
-import { createCountry } from "../../../store/slices/countrySlice";
-import { useDispatch } from "react-redux";
+import { createCity, fetchStates } from "../../../store/slices/citySlice";
+import { useDispatch, useSelector } from "react-redux";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import { useEffect, useRef, useState } from "react";
 import mainConfig from "../../../config/mainConfig";
-import { FiGlobe, FiInfo, FiSave } from "react-icons/fi";
+import { FiInfo, FiSave } from "react-icons/fi";
+import { FaCity } from "react-icons/fa6";
 
-const CreateCountry = () => {
+const CreateCity = () => {
   const dispatch = useDispatch();
+  const { states } = useSelector((state) => state.cities);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [actionType, setActionType] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
-  const countrylogoRef = useRef(null);
+  const citylogoRef = useRef(null);
 
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -24,11 +26,16 @@ const CreateCountry = () => {
   };
 
   const [formData, setFormData] = useState({
-    country_name: "",
-    country_code: "",
-    country_mobile: "",
-    country_logo: null,
+    city_name: "",
+    city_code: "",
+    pin_code: "",
+    city_logo: null,
+    city_state: "",
   });
+
+  useEffect(() => {
+    dispatch(fetchStates());
+  }, [dispatch]);
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
     for (let item of menu) {
@@ -79,15 +86,15 @@ const CreateCountry = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCountryLogoChange = () => {
-    const file = countrylogoRef.current?.files?.[0];
+  const handleCityLogoChange = () => {
+    const file = citylogoRef.current?.files?.[0];
     if (!file) return;
 
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
 
     if (!allowedTypes.includes(file.type)) {
       showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      countrylogoRef.current.value = "";
+      citylogoRef.current.value = "";
       return;
     }
   };
@@ -97,9 +104,10 @@ const CreateCountry = () => {
     setActionType("Save");
 
     if (
-      !formData.country_name ||
-      !formData.currency_code ||
-      !formData.country_mobile
+      !formData.city_name ||
+      !formData.city_code ||
+      !formData.pin_code ||
+      !formData.city_state
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -114,26 +122,27 @@ const CreateCountry = () => {
       }
     });
 
-    const file = countrylogoRef.current?.files?.[0];
+    const file = citylogoRef.current?.files?.[0];
     if (file) {
-      submitData.append("country_logo", file);
+      submitData.append("city_logo", file);
     }
 
     try {
-      const res = await dispatch(createCountry(submitData)).unwrap();
+      const res = await dispatch(createCity(submitData)).unwrap();
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Country created successfully!", "success");
+        showTemporaryMessage("City created successfully!", "success");
       } else if (res.status === 202) {
-        showTemporaryMessage("Country create accepted!", "success");
+        showTemporaryMessage("City create accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
       }
       setFormData({
-        country_name: "",
-        country_code: "",
-        country_mobile: "",
-        country_logo: "",
+        city_name: "",
+        city_code: "",
+        pin_code: "",
+        city_logo: null,
+        city_state: "",
       });
     } catch (error) {
       console.log("Error:", error);
@@ -161,7 +170,7 @@ const CreateCountry = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to create country!", "error");
+        showTemporaryMessage("Failed to create City!", "error");
       }
     }
 
@@ -230,9 +239,9 @@ const CreateCountry = () => {
                   <div className="animate-fadeIn rounded border border-gray-200">
                     <div className="px-6 flex justify-between items-center border-b-2 border-gray-200">
                       <div className="flex items-center gap-2 mt-4 pb-1">
-                        <FiGlobe className="text-amber-400 text-lg" />
+                        <FaCity className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create Country
+                          Create City
                         </h2>
                       </div>
 
@@ -248,56 +257,73 @@ const CreateCountry = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Code <span className="text-red-500">*</span>
+                            City Code <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="country_code"
+                            name="city_code"
                             placeholder="Enter Country Code"
-                            value={formData.country_code}
+                            value={formData.city_code}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Name <span className="text-red-500">*</span>
+                            City Name <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="country_name"
-                            placeholder="Enter Country name"
-                            value={formData.country_name}
+                            name="city_name"
+                            placeholder="Enter City name"
+                            value={formData.city_name}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country mobile{" "}
-                            <span className="text-red-500">*</span>
+                            Pin Code <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="country_mobile"
-                            placeholder="Enter Country Code"
-                            value={formData.country_mobile}
+                            name="pin_code"
+                            placeholder="Enter Pin Code"
+                            value={formData.pin_code}
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
                         </div>
                         <div className="flex items-center">
                           <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country Logo <span className="text-red-500">*</span>
+                            City Logo <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="file"
-                            ref={countrylogoRef}
-                            name="country_logo"
+                            ref={citylogoRef}
+                            name="city_logo"
                             accept="image/png, image/jpeg"
-                            onChange={handleCountryLogoChange}
+                            onChange={handleCityLogoChange}
                             className="flex-1 w-full form-input"
                           />
+                        </div>
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium text-gray-700">
+                            State <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="city_state"
+                            value={formData.city_state}
+                            onChange={handleChange}
+                            className="flex-1 w-full form-input"
+                          >
+                            <option value="">Select</option>
+                            {states.map((state) => (
+                              <option key={state.id} value={state.id}>
+                                {state.state_code} - {state.state_name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     </div>
@@ -331,4 +357,4 @@ const CreateCountry = () => {
   );
 };
 
-export default CreateCountry;
+export default CreateCity;

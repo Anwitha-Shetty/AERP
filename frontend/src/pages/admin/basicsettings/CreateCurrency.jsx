@@ -1,11 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "./../../../components/AdminSidebar";
-import {
-  createCurrency,
-  fetchUsers,
-  fetchCompanies,
-} from "../../../store/slices/currencySlice";
-import { useDispatch, useSelector } from "react-redux";
+import { createCurrency } from "../../../store/slices/currencySlice";
+import { useDispatch } from "react-redux";
 import {
   MdCurrencyExchange,
   MdKeyboardArrowLeft,
@@ -17,7 +13,6 @@ import { FiInfo, FiSave } from "react-icons/fi";
 
 const CreateCurrency = () => {
   const dispatch = useDispatch();
-  const { users, companies } = useSelector((state) => state.currencies);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [actionType, setActionType] = useState("");
   const navigate = useNavigate();
@@ -34,14 +29,7 @@ const CreateCurrency = () => {
     currency_name: "",
     currency_code: "",
     currency_symbol: "",
-    creator: "",
-    company: "",
   });
-
-  useEffect(() => {
-    dispatch(fetchUsers());
-    dispatch(fetchCompanies());
-  }, [dispatch]);
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
     for (let item of menu) {
@@ -99,9 +87,7 @@ const CreateCurrency = () => {
     if (
       !formData.currency_name ||
       !formData.currency_code ||
-      !formData.currency_symbol ||
-      !formData.creator ||
-      !formData.company
+      !formData.currency_symbol
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -130,8 +116,6 @@ const CreateCurrency = () => {
         currency_name: "",
         currency_code: "",
         currency_symbol: "",
-        creator: "",
-        company: "",
       });
     } catch (error) {
       console.log("Error:", error);
@@ -285,42 +269,6 @@ const CreateCurrency = () => {
                             onChange={handleChange}
                             className="flex-1 w-full form-input"
                           />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Creator <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="creator"
-                            value={formData.creator}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            {users.map((user) => (
-                              <option key={user.id} value={user.id}>
-                                {user.username} - {user.email}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Company <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="company"
-                            value={formData.company}
-                            onChange={handleChange}
-                            className="flex-1 w-full form-input"
-                          >
-                            <option value="">Select</option>
-                            {companies.map((cp) => (
-                              <option key={cp.id} value={cp.id}>
-                                {cp.company_code} - {cp.company_name}
-                              </option>
-                            ))}
-                          </select>
                         </div>
                       </div>
                     </div>

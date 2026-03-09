@@ -2,33 +2,35 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { useEffect, useState } from "react";
-import {
-  MdCurrencyExchange,
-  MdKeyboardArrowLeft,
-  MdKeyboardArrowRight,
-} from "react-icons/md";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
   FiEdit,
   FiEye,
+  FiHome,
   FiInfo,
   FiPlus,
   FiSearch,
+  FiUsers,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchCurriences,
-  updateCurrency,
-  deleteCurrency,
-} from "../../../store/slices/currencySlice";
+  fetchUsers,
+  fetchCompanies,
+  fetchStoragelocationtypes,
+  updateStoragelocationtype,
+} from "../../../store/slices/storagelocationtypeSlice";
 import { FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
+import { TbDatabaseEdit } from "react-icons/tb";
 
-const ViewCurrency = () => {
+const ViewStoragelocationtype = () => {
   const dispatch = useDispatch();
-  const { currencies, loading } = useSelector((state) => state.currencies);
+  const { storagelocationtypes, users, companies, loading } = useSelector(
+    (state) => state.storagelocationtypes,
+  );
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,11 +38,14 @@ const ViewCurrency = () => {
   const rowsPerPage = 5;
 
   useEffect(() => {
-    dispatch(fetchCurriences());
+    dispatch(fetchStoragelocationtypes());
+    dispatch(fetchUsers());
+    dispatch(fetchCompanies());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+  const [selectedStoragelocationtypes, setSelectedStoragelocationtypes] =
+    useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,15 +61,23 @@ const ViewCurrency = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [selectedStoragelocationtype, setSelectedStoragelocationtype] =
+    useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    currency_name: "",
-    currency_code: "",
-    currency_symbol: "",
+    name: "",
+    code: "",
+    is_open: "",
+    is_rack: "",
+    is_cold_storage: "",
+    is_hazardous: "",
+    is_quarantine: "",
+    description: "",
+    is_active: "",
+    sort_order: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -102,10 +115,10 @@ const ViewCurrency = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedStoragelocationtypes.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedCurrencies),
-          fullLabel: selectedCurrencies.join(", "),
+          label: formatIdsWithEllipsis(selectedStoragelocationtypes),
+          fullLabel: selectedStoragelocationtypes.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -143,8 +156,8 @@ const ViewCurrency = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedCurrency?.id) {
-      updateBreadcrumbs("View", selectedCurrency.id);
+    } else if (showConfirm && selectedStoragelocationtype?.id) {
+      updateBreadcrumbs("View", selectedStoragelocationtype.id);
     } else {
       updateBreadcrumbs();
     }
@@ -153,9 +166,9 @@ const ViewCurrency = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedCurrencies,
+    selectedStoragelocationtypes,
     editId,
-    selectedCurrency,
+    selectedStoragelocationtype,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -176,12 +189,49 @@ const ViewCurrency = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleOpenEdit = (currency) => {
-    setEditId(currency.id);
+  const handleOpenEdit = (storagelocationtype) => {
+    setEditId(storagelocationtype.id);
     setFormData({
-      currency_name: currency.currency_name || "",
-      currency_code: currency.currency_code || "",
-      currency_symbol: currency.currency_symbol || "",
+      name: storagelocationtype.name || "",
+      code: storagelocationtype.code || "",
+      is_open:
+        storagelocationtype.is_open == null
+          ? ""
+          : storagelocationtype.is_open
+            ? "true"
+            : "false",
+      is_rack:
+        storagelocationtype.is_rack == null
+          ? ""
+          : storagelocationtype.is_rack
+            ? "true"
+            : "false",
+      is_cold_storage:
+        storagelocationtype.is_cold_storage == null
+          ? ""
+          : storagelocationtype.is_cold_storage
+            ? "true"
+            : "false",
+      is_hazardous:
+        storagelocationtype.is_hazardous == null
+          ? ""
+          : storagelocationtype.is_hazardous
+            ? "true"
+            : "false",
+      is_quarantine:
+        storagelocationtype.is_quarantine == null
+          ? ""
+          : storagelocationtype.is_quarantine
+            ? "true"
+            : "false",
+      description: storagelocationtype.description || "",
+      is_active:
+        storagelocationtype.is_active === null
+          ? ""
+          : storagelocationtype.is_active
+            ? "true"
+            : "false",
+      sort_order: storagelocationtype.sort_order || "",
     });
 
     setShowEditModal(true);
@@ -193,16 +243,16 @@ const ViewCurrency = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (formData[key] !== undefined && formData[key] !== null) {
-        data.append(key, formData[key]);
+      if (key === "description") {
+        data.append("description", formData.description ?? null);
+      } else {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
       }
     });
 
-    if (
-      !formData.currency_name ||
-      !formData.currency_code ||
-      !formData.currency_symbol
-    ) {
+    if (!formData.name || !formData.code) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
       return;
@@ -210,13 +260,18 @@ const ViewCurrency = () => {
 
     try {
       const res = await dispatch(
-        updateCurrency({ id: editId, formData: data }),
+        updateStoragelocationtype({ id: editId, formData: data }),
       ).unwrap();
-
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Currency updated successfully!", "success");
+        showTemporaryMessage(
+          "Storage location Type updated successfully!",
+          "success",
+        );
       } else if (res.status === 202) {
-        showTemporaryMessage("Currency update accepted!", "success");
+        showTemporaryMessage(
+          "Storage location Type update accepted!",
+          "success",
+        );
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -250,7 +305,10 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update Currency!", "error");
+        showTemporaryMessage(
+          "Failed to update Storage location Type!",
+          "error",
+        );
       }
     }
   };
@@ -260,9 +318,16 @@ const ViewCurrency = () => {
     setEditId(null);
 
     setFormData({
-      currency_name: "",
-      currency_code: "",
-      currency_symbol: "",
+      name: "",
+      code: "",
+      is_open: "",
+      is_rack: "",
+      is_cold_storage: "",
+      is_hazardous: "",
+      is_quarantine: "",
+      description: "",
+      is_active: "",
+      sort_order: "",
     });
   };
 
@@ -274,32 +339,46 @@ const ViewCurrency = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedCurrencies.length === 0) return;
+    if (selectedStoragelocationtypes.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedStoragelocationtypes.length > 0) {
         const res = await Promise.all(
-          selectedCurrencies.map((id) => dispatch(deleteCurrency(id)).unwrap()),
+          selectedStoragelocationtypes.map((id) =>
+            dispatch(deleteWarehousetype(id)).unwrap(),
+          ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage(
+            "Storage location Type deleted successfully!",
+            "success",
+          );
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Currency delete accepted!", "success");
+          showTemporaryMessage(
+            "Storage location Type delete accepted!",
+            "success",
+          );
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedCurrencies([]);
+        setSelectedStoragelocationtypes([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteCurrency(deleteId)).unwrap();
+        const res = await dispatch(deleteVe(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage(
+            "Storage location Type deleted successfully!",
+            "success",
+          );
         } else if (res.status === 202) {
-          showTemporaryMessage("Curenncy delete accepted!", "success");
+          showTemporaryMessage(
+            "Storage location Type delete accepted!",
+            "success",
+          );
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -335,30 +414,41 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete Currency!", "error");
+        showTemporaryMessage(
+          "Failed to delete Storage location Type!",
+          "error",
+        );
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredCurrencies = currencies.filter((currency) => {
-    const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
-    const normalize = (value) =>
-      (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
-
-    return (
-      normalize(currency?.currency_code).includes(search) ||
-      normalize(currency?.currency_name).includes(search) ||
-      normalize(currency?.currency_symbol).includes(search) ||
-      normalize(currency?.creator?.username).includes(search) ||
-      normalize(currency?.company?.company_name).includes(search)
-    );
-  });
+  const filteredstoragelocationtypes = storagelocationtypes.filter(
+    (storagelocationtype) => {
+      const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
+      const normalize = (value) =>
+        (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
+      let activeText = "";
+      if (storagelocationtype?.is_active === true) activeText = "yes";
+      else if (storagelocationtype?.is_active === false) activeText = "no";
+      return (
+        normalize(storagelocationtype?.name).includes(search) ||
+        normalize(storagelocationtype?.code).includes(search) ||
+        normalize(storagelocationtype?.creator?.username).includes(search) ||
+        normalize(storagelocationtype?.company?.company_name).includes(
+          search,
+        ) ||
+        normalize(activeText).includes(search)
+      );
+    },
+  );
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredCurrencies.length / rowsPerPage);
+  const totalPages = Math.ceil(
+    filteredstoragelocationtypes.length / rowsPerPage,
+  );
 
-  const paginatedCurriences = filteredCurrencies.slice(
+  const paginatedStoragelocationtypes = filteredstoragelocationtypes.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -429,9 +519,9 @@ const ViewCurrency = () => {
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             <div className="flex items-center gap-2">
-              <MdCurrencyExchange className="text-amber-400 text-lg" />
+              <TbDatabaseEdit className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Currency
+                View Storage location Type
               </h2>
             </div>
 
@@ -449,20 +539,20 @@ const ViewCurrency = () => {
               </div>
 
               <Link
-                to="/admin/currency/create"
+                to="/admin/warehouse_type/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Currency
+                <FiPlus /> Create Storage location Type
               </Link>
 
-              {selectedCurrencies.length > 1 && (
+              {selectedStoragelocationtypes.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedCurrencies.length}
+                    {selectedStoragelocationtypes.length}
                   </span>
                 </button>
               )}
@@ -477,21 +567,22 @@ const ViewCurrency = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredCurrencies.length <= 1 ? (
+                      {filteredstoragelocationtypes.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredCurrencies.length > 1 &&
-                            selectedCurrencies.length ===
-                              filteredCurrencies.length
+                            filteredstoragelocationtypes.length > 1 &&
+                            selectedStoragelocationtypes.length ===
+                              filteredstoragelocationtypes.length
                           }
                           onChange={(e) =>
-                            setSelectedCurrencies(
+                            setSelectedStoragelocationtypes(
                               e.target.checked
-                                ? filteredCurrencies.map(
-                                    (currency) => currency.id,
+                                ? filteredstoragelocationtypes.map(
+                                    (storagelocationtype) =>
+                                      storagelocationtype.id,
                                   )
                                 : [],
                             )
@@ -501,11 +592,11 @@ const ViewCurrency = () => {
                       )}
                     </th>
                     {[
-                      "CURRENCY CODE",
-                      "CURRENCY NAME",
-                      "CURRENCY SYMBOL",
+                      "NAME",
+                      "CODE",
                       "CREATOR",
                       "COMPANY",
+                      "ACTIVE",
                       "ACTIONS",
                     ].map((label, idx) => (
                       <th
@@ -530,46 +621,63 @@ const ViewCurrency = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredCurrencies.length > 0 ? (
-                    paginatedCurriences.map((currency) => (
+                  ) : filteredstoragelocationtypes.length > 0 ? (
+                    paginatedStoragelocationtypes.map((storagelocationtype) => (
                       <tr
-                        key={currency.id}
+                        key={storagelocationtype.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedCurrencies.includes(currency.id)}
+                            checked={selectedStoragelocationtypes.includes(
+                              storagelocationtype.id,
+                            )}
                             onChange={() =>
-                              setSelectedCurrencies((prev) =>
-                                prev.includes(currency.id)
-                                  ? prev.filter((x) => x !== currency.id)
-                                  : [...prev, currency.id],
+                              setSelectedStoragelocationtypes((prev) =>
+                                prev.includes(storagelocationtype.id)
+                                  ? prev.filter(
+                                      (x) => x !== storagelocationtype.id,
+                                    )
+                                  : [...prev, storagelocationtype.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_code || "--"}
+                          {storagelocationtype?.name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_name || "--"}
+                          {storagelocationtype?.code || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_symbol || "--"}
+                          {storagelocationtype?.creator?.username || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.creator?.username || "--"}
+                          {storagelocationtype?.company?.company_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.company?.company_name || "--"}
+                          {storagelocationtype?.is_active == null ? (
+                            "--"
+                          ) : (
+                            <span
+                              className={
+                                storagelocationtype?.is_active
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                              }
+                            >
+                              {storagelocationtype?.is_active ? "Yes" : "No"}
+                            </span>
+                          )}
                         </td>
-
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(currency)}
+                              onClick={() =>
+                                handleOpenEdit(storagelocationtype)
+                              }
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -577,8 +685,13 @@ const ViewCurrency = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedCurrency(currency);
-                                updateBreadcrumbs("View", currency.id);
+                                setSelectedStoragelocationtype(
+                                  storagelocationtype,
+                                );
+                                updateBreadcrumbs(
+                                  "View",
+                                  storagelocationtype.id,
+                                );
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -587,7 +700,9 @@ const ViewCurrency = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(currency.id)}
+                              onClick={() =>
+                                handleDelete(storagelocationtype.id)
+                              }
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -603,7 +718,7 @@ const ViewCurrency = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-400 border border-gray-200"
                       >
-                        No Currency found!
+                        No Storage location Type found!
                       </td>
                     </tr>
                   )}
@@ -676,14 +791,14 @@ const ViewCurrency = () => {
         )}
       </main>
 
-      {showConfirm && selectedCurrency && (
+      {showConfirm && selectedStoragelocationtype && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <TbDatabaseEdit className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Currency
+                  View Storage location Type
                 </h2>
               </div>
 
@@ -701,42 +816,162 @@ const ViewCurrency = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Code:
+                      Storage location Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_code || "--"}
+                      {selectedStoragelocationtype?.name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Name:
+                      Storage location Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_name || "--"}
+                      {selectedStoragelocationtype?.code || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Symbol:
+                      Open:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_symbol || "--"}
+                      {selectedStoragelocationtype?.is_open == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedStoragelocationtype?.is_open
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedStoragelocationtype?.is_open ? "Yes" : "No"}
+                        </span>
+                      )}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Creator:
+                      Rack:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.creator?.username || "--"}
+                      {selectedStoragelocationtype?.is_rack == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedStoragelocationtype?.is_rack
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedStoragelocationtype?.is_rack ? "Yes" : "No"}
+                        </span>
+                      )}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Company:
+                      Cold Storage:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.company?.company_name || "--"}
+                      {selectedStoragelocationtype?.is_cold_storage == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedStoragelocationtype?.is_cold_storage
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedStoragelocationtype?.is_cold_storage
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Hazardous:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedStoragelocationtype?.is_hazardous == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedStoragelocationtype?.is_hazardous
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedStoragelocationtype?.is_hazardous
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Hazardous:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedStoragelocationtype?.is_quarantine == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedStoragelocationtype?.is_quarantine
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedStoragelocationtype?.is_quarantine
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Description:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedStoragelocationtype?.description || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Active:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedStoragelocationtype?.is_active == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedStoragelocationtype?.is_active
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedStoragelocationtype?.is_active
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Sort Order:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedStoragelocationtype?.sort_order || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -744,8 +979,8 @@ const ViewCurrency = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.created_at
-                        ? dayjs(selectedCurrency?.created_at).format(
+                      {selectedStoragelocationtype?.created_at
+                        ? dayjs(selectedStoragelocationtype?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -756,8 +991,8 @@ const ViewCurrency = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.updated_at
-                        ? dayjs(selectedCurrency?.updated_at).format(
+                      {selectedStoragelocationtype?.updated_at
+                        ? dayjs(selectedStoragelocationtype?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -775,9 +1010,9 @@ const ViewCurrency = () => {
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <TbDatabaseEdit className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Currency
+                  Change Storage location Type
                 </h2>
               </div>
               <button
@@ -791,42 +1026,179 @@ const ViewCurrency = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Code <span className="text-red-500">*</span>
+                  Storage location Type Name{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_code"
-                  placeholder="Enter Currency Code"
-                  value={formData.currency_code}
+                  name="name"
+                  placeholder="Enter Name"
+                  value={formData.name}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Name <span className="text-red-500">*</span>
+                  Storage location Type Code{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_name"
-                  placeholder="Enter Currency Name"
-                  value={formData.currency_name}
+                  name="code"
+                  placeholder="Enter Code"
+                  value={formData.code}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="form-label">
-                  Currency Symbol <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="currency_symbol"
-                  placeholder="Enter Currency Symbol"
-                  value={formData.currency_symbol}
+                <label className="form-label">Open</label>
+                <select
+                  name="is_open"
+                  value={formData.is_open}
                   onChange={handleChange}
                   className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Rack</label>
+                <select
+                  name="is_rack"
+                  value={formData.is_rack}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Cold Storage</label>
+                <select
+                  name="is_cold_storage"
+                  value={formData.is_cold_storage}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Hazardous</label>
+                <select
+                  name="is_hazardous"
+                  value={formData.is_hazardous}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={2}
+                  className="flex-1 w-full textarea-input"
+                  placeholder="Enter description..."
+                ></textarea>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Active</label>
+                <select
+                  name="is_active"
+                  value={formData.is_active}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Sort Order</label>
+
+                <input
+                  type="number"
+                  name="sort_order"
+                  placeholder="Enter Sort Order"
+                  value={formData.sort_order}
+                  min="0"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || /^\d+$/.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "-" || e.key === "e") {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="form-input"
                 />
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Creator <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="creator"
+                  value={formData.creator}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.username} - {user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Company <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="company"
+                  value={formData.company}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {companies.map((cp) => (
+                    <option key={cp.id} value={cp.id}>
+                      {cp.company_code} - {cp.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Remarks</label>
+                <textarea
+                  name="remarks"
+                  value={formData.remarks}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter remarks..."
+                ></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
@@ -867,7 +1239,7 @@ const ViewCurrency = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCurrencies([]);
+                  if (isBulkDelete) setSelectedStoragelocationtypes([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -883,4 +1255,4 @@ const ViewCurrency = () => {
   );
 };
 
-export default ViewCurrency;
+export default ViewStoragelocationtype;

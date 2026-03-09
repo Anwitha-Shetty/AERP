@@ -1,4 +1,50 @@
+const FAVORITES_KEY = "aerp_favorites";
+
+/* ===============================
+   FAVORITES STORAGE FUNCTIONS
+================================ */
+
+export const getFavorites = () => {
+  const fav = localStorage.getItem(FAVORITES_KEY);
+  return fav ? JSON.parse(fav) : [];
+};
+
+export const saveFavorites = (favorites) => {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+};
+
+export const addToFavorites = (item) => {
+  const favorites = getFavorites();
+  const exists = favorites.find((f) => f.id === item.id);
+
+  if (!exists) {
+    favorites.push({ ...item, isFavorite: true });
+    saveFavorites(favorites);
+  }
+};
+
+export const removeFromFavorites = (id) => {
+  const favorites = getFavorites().filter((f) => f.id !== id);
+  saveFavorites(favorites);
+};
+
+/* ===============================
+   FAVORITES MENU
+================================ */
+
+export const getFavoritesMenu = () => ({
+  id: "favoritesMenu",
+  label: "Favorites",
+  iconName: "FiStar",
+  subMenu: getFavorites(),
+});
+
+/* ===============================
+   MAIN MENU CONFIG
+================================ */
+
 const mainConfig = [
+  getFavoritesMenu(),
   {
     id: "home",
     label: "Home",
@@ -11,59 +57,234 @@ const mainConfig = [
     iconName: "FaCog",
     subMenu: [
       {
-        id: "currencyMenu",
-        label: "Currency",
-        iconName: "MdCurrencyExchange",
-        subMenu: [
-          {
-            id: "createcurrencyMenu",
-            label: "Create currency",
-            path: "/admin/currency/create",
-            iconName: "MdCurrencyExchange",
-          },
-          {
-            id: "viewCurrencyMenu",
-            label: "View Currency",
-            path: "/admin/currency/view",
-            iconName: "MdCurrencyExchange",
-          },
-        ],
-      },
-      {
-        id: "countryMenu",
-        label: "Country",
+        id: "regionalSettingsMenu",
+        label: "Regional Settings",
         iconName: "FiGlobe",
         subMenu: [
           {
-            id: "createCountryMenu",
-            label: "Create Country",
-            path: "/admin/country/create",
-            iconName: "FiGlobe",
+            id: "currencyMenu",
+            label: "Currency",
+            iconName: "MdCurrencyExchange",
+            subMenu: [
+              {
+                id: "createcurrencyMenu",
+                label: "Create currency",
+                path: "/admin/currency/create",
+                iconName: "MdCurrencyExchange",
+              },
+              {
+                id: "viewCurrencyMenu",
+                label: "View Currency",
+                path: "/admin/currency/view",
+                iconName: "MdCurrencyExchange",
+              },
+            ],
           },
           {
-            id: "viewCountryMenu",
-            label: "View Country",
-            path: "/admin/country/view",
+            id: "countryMenu",
+            label: "Country",
             iconName: "FiGlobe",
+            subMenu: [
+              {
+                id: "createCountryMenu",
+                label: "Create Country",
+                path: "/admin/country/create",
+                iconName: "FiGlobe",
+              },
+              {
+                id: "viewCountryMenu",
+                label: "View Country",
+                path: "/admin/country/view",
+                iconName: "FiGlobe",
+              },
+            ],
+          },
+          {
+            id: "stateMenu",
+            label: "State",
+            iconName: "FiFlag",
+            subMenu: [
+              {
+                id: "createstateMenu",
+                label: "Create State",
+                path: "/admin/state/create",
+                iconName: "FiFlag",
+              },
+              {
+                id: "viewstateMenu",
+                label: "View State",
+                path: "/admin/state/view",
+                iconName: "FiFlag",
+              },
+            ],
+          },
+          {
+            id: "cityMenu",
+            label: "City",
+            iconName: "FaCity",
+            subMenu: [
+              {
+                id: "createcityMenu",
+                label: "Create City",
+                path: "/admin/city/create",
+                iconName: "FaCity",
+              },
+              {
+                id: "viewcityMenu",
+                label: "View City",
+                path: "/admin/city/view",
+                iconName: "FaCity",
+              },
+            ],
+          },
+          {
+            id: "languageMenu",
+            label: "Language",
+            iconName: "FaLanguage",
+            subMenu: [
+              {
+                id: "createlanguageMenu",
+                label: "Create Language",
+                path: "/admin/language/create",
+                iconName: "FaLanguage",
+              },
+              {
+                id: "viewlanguageMenu",
+                label: "View Language",
+                path: "/admin/language/view",
+                iconName: "FaLanguage",
+              },
+            ],
           },
         ],
       },
+
       {
-        id: "stateMenu",
-        label: "State",
-        iconName: "FiFlag",
+        id: "businessSettingsMenu",
+        label: "Business",
+        iconName: "PiMapPinAreaFill",
         subMenu: [
           {
-            id: "createstateMenu",
-            label: "Create State",
-            path: "/admin/state/create",
-            iconName: "FiFlag",
+            id: "businessareaMenu",
+            label: "Business Area",
+            iconName: "PiMapPinAreaFill",
+            subMenu: [
+              {
+                id: "createbusinessareaMenu",
+                label: "Create Business Area",
+                path: "/admin/business_area/create",
+                iconName: "PiMapPinAreaFill",
+              },
+              {
+                id: "viewbusinessareaMenu",
+                label: "View Business Area",
+                path: "/admin/business_area/view",
+                iconName: "PiMapPinAreaFill",
+              },
+            ],
           },
           {
-            id: "viewstateMenu",
-            label: "View State",
-            path: "/admin/state/view",
-            iconName: "FiFlag",
+            id: "businesssectorMenu",
+            label: "Business Sectors",
+            iconName: "GiFactory",
+            subMenu: [
+              {
+                id: "createbusinesssectorMenu",
+                label: "Create Business Sectors",
+                path: "/admin/business_sector/create",
+                iconName: "GiFactory",
+              },
+              {
+                id: "viewbusinesssectorMenu",
+                label: "View Business Sectors",
+                path: "/admin/business_sector/view",
+                iconName: "GiFactory",
+              },
+            ],
+          },
+          {
+            id: "companystatusMenu",
+            label: "Company Status",
+            iconName: "BsBuildingFillCheck",
+            subMenu: [
+              {
+                id: "createcompanystatusMenu",
+                label: "Create Company Status",
+                path: "/admin/company_status/create",
+                iconName: "BsBuildingFillCheck",
+              },
+              {
+                id: "viewcompanystatusMenu",
+                label: "View Company Status",
+                path: "/admin/company_status/view",
+                iconName: "BsBuildingFillCheck",
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        id: "userSettingsMenu",
+        label: "User",
+        iconName: "FiUsers",
+        subMenu: [
+          {
+            id: "userstatusMenu",
+            label: "User Status",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createuserstatusMenu",
+                label: "Create User Status",
+                path: "/admin/user_status/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewuserstatusMenu",
+                label: "View User Status",
+                path: "/admin/user_status/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
+            id: "usertypeMenu",
+            label: "User Type",
+            iconName: "FiUsers",
+            subMenu: [
+              {
+                id: "createusertypeMenu",
+                label: "Create User Type",
+                path: "/admin/user_type/create",
+                iconName: "FiUsers",
+              },
+              {
+                id: "viewusertypeMenu",
+                label: "View User Type",
+                path: "/admin/user_type/view",
+                iconName: "FiUsers",
+              },
+            ],
+          },
+          {
+            id: "positionMenu",
+            label: "Position",
+            iconName: "FaUserTie",
+            subMenu: [
+              {
+                id: "createpositionMenu",
+                label: "Create Position",
+                path: "/admin/position/create",
+                iconName: "FaUserTie",
+              },
+              {
+                id: "viewpositionMenu",
+                label: "View Position",
+                path: "/admin/position/view",
+                iconName: "FaUserTie",
+              },
+            ],
           },
         ],
       },
@@ -313,6 +534,95 @@ const mainConfig = [
         label: "Material Master",
         path: "/admin/materials",
         iconName: "FiTool",
+      },
+    ],
+  },
+  {
+    id: "warehousemangementMenu",
+    label: "Warehouse Mangement",
+    iconName: "FaHome",
+    subMenu: [
+      {
+        id: "warehousetypesMenu",
+        label: "Warehouse Types",
+        iconName: "FaHome",
+        subMenu: [
+          {
+            id: "createwarehousetypesMenu",
+            label: "Create Warehouse Type",
+            path: "/admin/warehouse_type/create",
+            iconName: "FaHome",
+          },
+          {
+            id: "viewwarehousetypesMenu",
+            label: "View Warehouse Types",
+            path: "/admin/warehouse_type/view",
+            iconName: "FaHome",
+          },
+        ],
+      },
+      {
+        id: "warehouseMasterMenu",
+        label: "Warehouse Master",
+        path: "/admin/warehouse-master",
+        iconName: "FaHome",
+      },
+      {
+        id: "storagelocationtypesMenu",
+        label: "Storage Location Types",
+        iconName: "TbDatabaseEdit",
+        subMenu: [
+          {
+            id: "storagelocationtypesMenu",
+            label: "Create Storage Location Type",
+            path: "/admin/storage_location_type/create",
+            iconName: "TbDatabaseEdit",
+          },
+          {
+            id: "storagelocationtypesMenu",
+            label: "View Storage Location Types",
+            path: "/admin/storage_location_type/view",
+            iconName: "TbDatabaseEdit",
+          },
+        ],
+      },
+      {
+        id: "materialmovementsMenu",
+        label: "Material Movement",
+        iconName: "FaExchangeAlt",
+        subMenu: [
+          {
+            id: "materialmovementsMenu",
+            label: "Create Material Movement",
+            path: "/admin/material_movement/create",
+            iconName: "FaExchangeAlt",
+          },
+          {
+            id: "materialmovementsMenu",
+            label: "View Material Movement",
+            path: "/admin/material_movement/view",
+            iconName: "FaExchangeAlt",
+          },
+        ],
+      },
+      {
+        id: "transactionstatusMenu",
+        label: "Transaction Status",
+        iconName: "FiRefreshCw",
+        subMenu: [
+          {
+            id: "createtransactionstatusMenu",
+            label: "Create Transaction Status",
+            path: "/admin/transaction_status/create",
+            iconName: "FiRefreshCw",
+          },
+          {
+            id: "viewtransactionstatusMenu",
+            label: "View Transaction Status",
+            path: "/admin/transaction_status/view",
+            iconName: "FiRefreshCw",
+          },
+        ],
       },
     ],
   },

@@ -1,12 +1,8 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { useEffect, useState } from "react";
-import {
-  MdCurrencyExchange,
-  MdKeyboardArrowLeft,
-  MdKeyboardArrowRight,
-} from "react-icons/md";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
   FiArrowLeft,
@@ -15,20 +11,35 @@ import {
   FiEye,
   FiInfo,
   FiPlus,
+  FiSave,
   FiSearch,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchCurriences,
-  updateCurrency,
-  deleteCurrency,
-} from "../../../store/slices/currencySlice";
-import { FaTimes, FaTrashAlt } from "react-icons/fa";
+import { FaHome, FaTimes, FaTrashAlt } from "react-icons/fa";
 import dayjs from "dayjs";
+import {
+  createWarehouse,
+  deleteWarehouse,
+  fetchCities,
+  fetchCountries,
+  fetchPlants,
+  fetchStates,
+  fetchWarehouses,
+  fetchWarehousetypes,
+  updateWarehouse,
+} from "../../../store/slices/warehouseSlice";
 
-const ViewCurrency = () => {
+const WarehouseMaster = () => {
   const dispatch = useDispatch();
-  const { currencies, loading } = useSelector((state) => state.currencies);
+  const {
+    warehousetypes,
+    plants,
+    countries,
+    states,
+    cities,
+    warehouses,
+    loading,
+  } = useSelector((state) => state.warehouses);
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,11 +47,16 @@ const ViewCurrency = () => {
   const rowsPerPage = 5;
 
   useEffect(() => {
-    dispatch(fetchCurriences());
+    dispatch(fetchWarehouses());
+    dispatch(fetchWarehousetypes());
+    dispatch(fetchPlants());
+    dispatch(fetchCountries());
+    dispatch(fetchStates());
+    dispatch(fetchCities());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+  const [selectedWarehouses, setSelectedWarehouses] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,15 +72,24 @@ const ViewCurrency = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [selectedWarehouse, setSelectedWarehouse] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    currency_name: "",
-    currency_code: "",
-    currency_symbol: "",
+    warehouse_name: "",
+    warehouse_code: "",
+    short_name: "",
+    plant: "",
+    warehouse_type: "",
+    is_active: "",
+    address_line1: "",
+    address_line2: "",
+    country: "",
+    state: "",
+    city: "",
+    max_capacity: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -102,10 +127,10 @@ const ViewCurrency = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedWarehouses.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedCurrencies),
-          fullLabel: selectedCurrencies.join(", "),
+          label: formatIdsWithEllipsis(selectedWarehouses),
+          fullLabel: selectedWarehouses.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -143,8 +168,8 @@ const ViewCurrency = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedCurrency?.id) {
-      updateBreadcrumbs("View", selectedCurrency.id);
+    } else if (showConfirm && selectedWarehouse?.id) {
+      updateBreadcrumbs("View", selectedWarehouse.id);
     } else {
       updateBreadcrumbs();
     }
@@ -153,9 +178,9 @@ const ViewCurrency = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedCurrencies,
+    selectedWarehouses,
     editId,
-    selectedCurrency,
+    selectedWarehouse,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -176,12 +201,26 @@ const ViewCurrency = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleOpenEdit = (currency) => {
-    setEditId(currency.id);
+  const handleOpenEdit = (warehouses) => {
+    setEditId(warehouses.id);
     setFormData({
-      currency_name: currency.currency_name || "",
-      currency_code: currency.currency_code || "",
-      currency_symbol: currency.currency_symbol || "",
+      warehouse_name: warehouses.warehouse_name || "",
+      warehouse_code: warehouses.warehouse_code || "",
+      short_name: warehouses.short_name || "",
+      plant: warehouses.plant?.id || "",
+      warehouse_type: warehouses.warehouse_type?.id || "",
+      is_active:
+        warehouses.is_active === null
+          ? ""
+          : warehouses.is_active
+            ? "true"
+            : "false",
+      address_line1: warehouses.address_line1 || "",
+      address_line2: warehouses.address_line2 || "",
+      country: warehouses.country?.id || "",
+      city: warehouses.city?.id || "",
+      state: warehouses.state?.id || "",
+      max_capacity: warehouses.max_capacity || "",
     });
 
     setShowEditModal(true);
@@ -193,15 +232,22 @@ const ViewCurrency = () => {
     const data = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (formData[key] !== undefined && formData[key] !== null) {
-        data.append(key, formData[key]);
+      if (key === "address_line1") {
+        data.append("address_line1", formData.address_line1 ?? null);
+      } else if (key === "address_line2") {
+        data.append("address_line2", formData.address_line2 ?? null);
+      } else {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
       }
     });
 
     if (
-      !formData.currency_name ||
-      !formData.currency_code ||
-      !formData.currency_symbol
+      !formData.warehouse_name ||
+      !formData.warehouse_code ||
+      !formData.short_name ||
+      !formData.plant
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -209,19 +255,43 @@ const ViewCurrency = () => {
     }
 
     try {
-      const res = await dispatch(
-        updateCurrency({ id: editId, formData: data }),
-      ).unwrap();
-
-      if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Currency updated successfully!", "success");
-      } else if (res.status === 202) {
-        showTemporaryMessage("Currency update accepted!", "success");
+      if (editId) {
+        const res = await dispatch(
+          updateWarehouse({ id: editId, formData: data }),
+        ).unwrap();
+        if (res.status === 200 || res.status === 201) {
+          showTemporaryMessage("Warehouse updated successfully!", "success");
+        } else if (res.status === 202) {
+          showTemporaryMessage("Warehouse update accepted!", "success");
+        } else {
+          showTemporaryMessage("Unexpected response from server.", "error");
+          return;
+        }
       } else {
-        showTemporaryMessage("Unexpected response from server.", "error");
-        return;
+        const res = await dispatch(createWarehouse(data)).unwrap();
+        if (res.status === 200 || res.status === 201) {
+          showTemporaryMessage("Warehouse created successfully!", "success");
+        } else if (res.status === 202) {
+          showTemporaryMessage("Warehouse create accepted!", "success");
+        } else {
+          showTemporaryMessage("Unexpected response from server.", "error");
+          return;
+        }
+        setFormData({
+          warehouse_name: "",
+          warehouse_code: "",
+          short_name: "",
+          plant: "",
+          warehouse_type: "",
+          is_active: "",
+          address_line1: "",
+          address_line2: "",
+          country: "",
+          state: "",
+          city: "",
+          max_capacity: "",
+        });
       }
-
       setShowEditModal(false);
       setEditId(null);
     } catch (error) {
@@ -250,7 +320,7 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update Currency!", "error");
+        showTemporaryMessage("Failed to update or create Warehouse!", "error");
       }
     }
   };
@@ -260,9 +330,18 @@ const ViewCurrency = () => {
     setEditId(null);
 
     setFormData({
-      currency_name: "",
-      currency_code: "",
-      currency_symbol: "",
+      warehouse_name: "",
+      warehouse_code: "",
+      short_name: "",
+      plant: "",
+      warehouse_type: "",
+      is_active: "",
+      address_line1: "",
+      address_line2: "",
+      country: "",
+      state: "",
+      city: "",
+      max_capacity: "",
     });
   };
 
@@ -274,32 +353,34 @@ const ViewCurrency = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedCurrencies.length === 0) return;
+    if (selectedWarehouses.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedWarehouses.length > 0) {
         const res = await Promise.all(
-          selectedCurrencies.map((id) => dispatch(deleteCurrency(id)).unwrap()),
+          selectedWarehouses.map((id) =>
+            dispatch(deleteWarehouse(id)).unwrap(),
+          ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage("Warehouse deleted successfully!", "success");
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Currency delete accepted!", "success");
+          showTemporaryMessage("Warehouses delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedCurrencies([]);
+        setSelectedWarehouses([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteCurrency(deleteId)).unwrap();
+        const res = await dispatch(deleteWarehouse(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage("Warehouse deleted successfully!", "success");
         } else if (res.status === 202) {
-          showTemporaryMessage("Curenncy delete accepted!", "success");
+          showTemporaryMessage("Warehouse delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -335,30 +416,30 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete Currency!", "error");
+        showTemporaryMessage("Failed to delete Warehouse!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredCurrencies = currencies.filter((currency) => {
+  const filteredWarehouses = warehouses.filter((warehouses) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
 
     return (
-      normalize(currency?.currency_code).includes(search) ||
-      normalize(currency?.currency_name).includes(search) ||
-      normalize(currency?.currency_symbol).includes(search) ||
-      normalize(currency?.creator?.username).includes(search) ||
-      normalize(currency?.company?.company_name).includes(search)
+      normalize(warehouses?.warehouse_code).includes(search) ||
+      normalize(warehouses?.warehouse_name).includes(search) ||
+      normalize(warehouses?.plant?.plant_name).includes(search) ||
+      normalize(warehouses?.creator?.username).includes(search) ||
+      normalize(warehouses?.company?.company_name).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredCurrencies.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredWarehouses.length / rowsPerPage);
 
-  const paginatedCurriences = filteredCurrencies.slice(
+  const paginatedWarehouses = filteredWarehouses.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -369,11 +450,11 @@ const ViewCurrency = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-[355px] z-40">
         <AdminSidebar />
       </div>
 
-      <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+      <main className="flex-1 ml-0 lg:ml-[355px] mt-[145px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2 overflow-hidden whitespace-nowrap max-w-[80%]">
             {breadcrumbs.map((b, idx) => (
@@ -429,9 +510,9 @@ const ViewCurrency = () => {
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             <div className="flex items-center gap-2">
-              <MdCurrencyExchange className="text-amber-400 text-lg" />
+              <FaHome className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Currency
+                Warehouse Master
               </h2>
             </div>
 
@@ -448,21 +529,38 @@ const ViewCurrency = () => {
                 />
               </div>
 
-              <Link
-                to="/admin/currency/create"
+              <button
+                onClick={() => {
+                  setEditId(null);
+                  setFormData({
+                    warehouse_name: "",
+                    warehouse_code: "",
+                    short_name: "",
+                    plant: "",
+                    warehouse_type: "",
+                    is_active: "",
+                    address_line1: "",
+                    address_line2: "",
+                    country: "",
+                    state: "",
+                    city: "",
+                    max_capacity: "",
+                  });
+                  setShowEditModal(true);
+                }}
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Currency
-              </Link>
+                <FiPlus /> Create Warehouses
+              </button>
 
-              {selectedCurrencies.length > 1 && (
+              {selectedWarehouses.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedCurrencies.length}
+                    {selectedWarehouses.length}
                   </span>
                 </button>
               )}
@@ -477,21 +575,21 @@ const ViewCurrency = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredCurrencies.length <= 1 ? (
+                      {filteredWarehouses.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredCurrencies.length > 1 &&
-                            selectedCurrencies.length ===
-                              filteredCurrencies.length
+                            filteredWarehouses.length > 1 &&
+                            selectedWarehouses.length ===
+                              filteredWarehouses.length
                           }
                           onChange={(e) =>
-                            setSelectedCurrencies(
+                            setSelectedWarehouses(
                               e.target.checked
-                                ? filteredCurrencies.map(
-                                    (currency) => currency.id,
+                                ? filteredWarehouses.map(
+                                    (warehouse) => warehouse.id,
                                   )
                                 : [],
                             )
@@ -501,9 +599,9 @@ const ViewCurrency = () => {
                       )}
                     </th>
                     {[
-                      "CURRENCY CODE",
-                      "CURRENCY NAME",
-                      "CURRENCY SYMBOL",
+                      "WAREHOUSE CODE",
+                      "WAREHOUSE NAME",
+                      "PLANT NAME",
                       "CREATOR",
                       "COMPANY",
                       "ACTIONS",
@@ -530,46 +628,45 @@ const ViewCurrency = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredCurrencies.length > 0 ? (
-                    paginatedCurriences.map((currency) => (
+                  ) : filteredWarehouses.length > 0 ? (
+                    paginatedWarehouses.map((warehouse) => (
                       <tr
-                        key={currency.id}
+                        key={warehouse.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedCurrencies.includes(currency.id)}
+                            checked={selectedWarehouses.includes(warehouse.id)}
                             onChange={() =>
-                              setSelectedCurrencies((prev) =>
-                                prev.includes(currency.id)
-                                  ? prev.filter((x) => x !== currency.id)
-                                  : [...prev, currency.id],
+                              setSelectedWarehouses((prev) =>
+                                prev.includes(warehouse.id)
+                                  ? prev.filter((x) => x !== warehouse.id)
+                                  : [...prev, warehouse.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_code || "--"}
+                          {warehouse?.warehouse_code || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_name || "--"}
+                          {warehouse?.warehouse_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_symbol || "--"}
+                          {warehouse?.plant?.plant_name || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.creator?.username || "--"}
+                          {warehouse?.creator?.username || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.company?.company_name || "--"}
+                          {warehouse?.company?.company_name || "--"}
                         </td>
-
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(currency)}
+                              onClick={() => handleOpenEdit(warehouse)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -577,8 +674,8 @@ const ViewCurrency = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedCurrency(currency);
-                                updateBreadcrumbs("View", currency.id);
+                                setSelectedWarehouse(warehouse);
+                                updateBreadcrumbs("View", warehouse.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -587,7 +684,7 @@ const ViewCurrency = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(currency.id)}
+                              onClick={() => handleDelete(warehouse.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -603,7 +700,7 @@ const ViewCurrency = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-400 border border-gray-200"
                       >
-                        No Currency found!
+                        No warehouses found!
                       </td>
                     </tr>
                   )}
@@ -676,14 +773,14 @@ const ViewCurrency = () => {
         )}
       </main>
 
-      {showConfirm && selectedCurrency && (
+      {showConfirm && selectedWarehouse && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <FaHome className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Currency
+                  View Warehouse
                 </h2>
               </div>
 
@@ -701,26 +798,102 @@ const ViewCurrency = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Code:
+                      Warehouse Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_code || "--"}
+                      {selectedWarehouse?.warehouse_code || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Name:
+                      Warehouse Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_name || "--"}
+                      {selectedWarehouse?.warehouse_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Symbol:
+                      Short Name:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_symbol || "--"}
+                      {selectedWarehouse?.short_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Plant:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedWarehouse?.plant?.plant_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Warehouse Type:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedWarehouse?.warehouse_type?.name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left">
+                      Active:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4">
+                      {selectedWarehouse?.is_active == null ? (
+                        "--"
+                      ) : (
+                        <span
+                          className={
+                            selectedWarehouse?.is_active
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {selectedWarehouse?.is_active ? "Yes" : "No"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Address line1:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedWarehouse?.address_line1 || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Address line2:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedWarehouse?.address_line2 || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Country:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedWarehouse?.country?.country_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      state:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedWarehouse?.state?.state_name || "--"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      City:
+                    </td>
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedWarehouse?.city?.city_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -728,7 +901,7 @@ const ViewCurrency = () => {
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.creator?.username || "--"}
+                      {selectedWarehouse?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -736,7 +909,7 @@ const ViewCurrency = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.company?.company_name || "--"}
+                      {selectedWarehouse?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -744,8 +917,8 @@ const ViewCurrency = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.created_at
-                        ? dayjs(selectedCurrency?.created_at).format(
+                      {selectedWarehouse?.created_at
+                        ? dayjs(selectedWarehouse?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -756,8 +929,8 @@ const ViewCurrency = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.updated_at
-                        ? dayjs(selectedCurrency?.updated_at).format(
+                      {selectedWarehouse?.updated_at
+                        ? dayjs(selectedWarehouse?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -775,9 +948,9 @@ const ViewCurrency = () => {
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <FaHome className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Currency
+                  {editId ? "Change" : "Create"} Warehouse Master
                 </h2>
               </div>
               <button
@@ -791,40 +964,182 @@ const ViewCurrency = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Code <span className="text-red-500">*</span>
+                  Warehouse Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_code"
-                  placeholder="Enter Currency Code"
-                  value={formData.currency_code}
+                  name="warehouse_code"
+                  placeholder="Enter Warehouse Code"
+                  value={formData.warehouse_code}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Name <span className="text-red-500">*</span>
+                  Warehouse Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_name"
-                  placeholder="Enter Currency Name"
-                  value={formData.currency_name}
+                  name="warehouse_name"
+                  placeholder="Enter Warehouse Name"
+                  value={formData.warehouse_name}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Symbol <span className="text-red-500">*</span>
+                  Short Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_symbol"
-                  placeholder="Enter Currency Symbol"
-                  value={formData.currency_symbol}
+                  name="short_name"
+                  placeholder="Enter Short Name"
+                  value={formData.short_name}
                   onChange={handleChange}
+                  className="form-input"
+                />
+              </div>{" "}
+              <div className="flex flex-col">
+                <label className="form-label">
+                  Plant <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="plant"
+                  value={formData.plant}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {plants.map((plant) => (
+                    <option key={plant.id} value={plant.id}>
+                      {plant.plant_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Warehouse Type</label>
+                <select
+                  name="warehouse_type"
+                  value={formData.warehouse_type}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {warehousetypes.map((warehousetypes) => (
+                    <option key={warehousetypes.id} value={warehousetypes.id}>
+                      {warehousetypes.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Active</label>
+                <select
+                  name="is_active"
+                  value={formData.is_active}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Address Line 1</label>
+                <textarea
+                  name="address_line1"
+                  value={formData.address_line1}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter Address Line 1..."
+                ></textarea>
+              </div>
+              <div className="flex flex-col col-span-2">
+                <label className="form-label">Address Line 2</label>
+                <textarea
+                  name="address_line2"
+                  value={formData.address_line2}
+                  onChange={handleChange}
+                  rows={2}
+                  className="textarea-input"
+                  placeholder="Enter Address Line 2..."
+                ></textarea>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Country</label>
+                <select
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {countries.map((countries) => (
+                    <option key={countries.id} value={countries.id}>
+                      {countries.country_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">State</label>
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {states.map((states) => (
+                    <option key={states.id} value={states.id}>
+                      {states.state_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">City</label>
+                <select
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="">Select</option>
+                  {cities.map((cities) => (
+                    <option key={cities.id} value={cities.id}>
+                      {cities.city_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="form-label">Max Capacity</label>
+                <input
+                  type="number"
+                  name="max_capacity"
+                  placeholder="Enter Max Capacity"
+                  value={formData.max_capacity}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const regex = /^\d*(\.\d{0,2})?$/;
+                    if (value === "" || regex.test(value)) {
+                      handleChange(e);
+                    }
+                  }}
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
                   className="form-input"
                 />
               </div>
@@ -840,7 +1155,7 @@ const ViewCurrency = () => {
                 onClick={handleSubmitEdit}
                 className="flex items-center gap-1 px-3 py-1.5 h-8 text-sm cursor-pointer rounded bg-amber-400 text-black"
               >
-                <FiEdit /> Change
+                {editId ? <FiEdit /> : <FiSave />} {editId ? "Change" : "Save"}
               </button>
             </div>
           </div>
@@ -849,15 +1164,14 @@ const ViewCurrency = () => {
 
       {showDeleteModal && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
-          <div className="bg-white p-4 rounded-md w-11/12 max-w-md shadow-xl">
-            <div className="flex justify-center mb-3">
+          <div className="bg-white px-6 py-4 rounded-md w-11/12 max-w-sm shadow-md border border-gray-300">
+            <div className="flex justify-center mb-1">
               <FiAlertTriangle className="text-amber-400 text-4xl" />
             </div>
-            <h2 className="text-lg font-semibold text-center mb-4">
+            <h2 className="text-lg font-semibold text-center mb-2 whitespace-nowrap">
               Are you sure you want to delete?
             </h2>
-
-            <div className="flex justify-center gap-4 mt-4">
+            <div className="flex justify-center gap-4 mt-2">
               <button
                 onClick={confirmDelete}
                 className="bg-amber-400 text-black font-medium px-3 py-1.5 rounded-md cursor-pointer"
@@ -867,7 +1181,7 @@ const ViewCurrency = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCurrencies([]);
+                  if (isBulkDelete) setSelectedWarehouses([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -883,4 +1197,4 @@ const ViewCurrency = () => {
   );
 };
 
-export default ViewCurrency;
+export default WarehouseMaster;

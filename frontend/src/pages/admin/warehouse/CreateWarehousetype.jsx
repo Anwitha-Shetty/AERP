@@ -1,21 +1,25 @@
+import { useEffect, useState } from "react";
+import AdminSidebar from "../../../components/AdminSidebar";
 import { useLocation, useNavigate } from "react-router-dom";
-import AdminSidebar from "./../../../components/AdminSidebar";
-import { createState, fetchCountries } from "../../../store/slices/stateSlice";
-import { useDispatch, useSelector } from "react-redux";
-import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
-import { useEffect, useRef, useState } from "react";
 import mainConfig from "../../../config/mainConfig";
-import { FiFlag, FiInfo, FiSave } from "react-icons/fi";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
+import { FiInfo, FiSave, FiHome } from "react-icons/fi";
 
-const CreateState = () => {
+import {
+  createWarehousetype,
+  fetchUsers,
+  fetchCompanies,
+} from "../../../store/slices/warehousetypeSlice";
+
+import { useDispatch, useSelector } from "react-redux";
+
+const CreateWarehousetype = () => {
   const dispatch = useDispatch();
-  const { countries } = useSelector((state) => state.states);
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [actionType, setActionType] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
-  const statelogoRef = useRef(null);
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
+  const [actionType, setActionType] = useState("");
 
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -25,20 +29,23 @@ const CreateState = () => {
   };
 
   const [formData, setFormData] = useState({
-    state_name: "",
-    state_code: "",
-    state_logo: null,
-    state_country: "",
+    name: "",
+    code: "",
+    is_raw_material: "",
+    is_finished_goods: "",
+    is_spare_parts: "",
+    is_transit: "",
+    description: "",
+    is_active: "",
+    sort_order: "",
   });
-
-  useEffect(() => {
-    dispatch(fetchCountries());
-  }, [dispatch]);
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
     for (let item of menu) {
       const newParents = [...parents, item];
+
       if (item.path === targetPath) return newParents;
+
       if (item.subMenu) {
         const result = findPathInMenu(item.subMenu, targetPath, newParents);
         if (result) return result;
@@ -50,12 +57,15 @@ const CreateState = () => {
   useEffect(() => {
     const basePath = location.pathname;
     const menuPath = findPathInMenu(mainConfig, basePath) || [];
+
     const breadcrumbArray = menuPath.map((i) => ({
       label: i.label,
       path: i.path,
     }));
+
     if (actionType === "Save")
       breadcrumbArray.push({ label: "Save", path: null });
+
     setBreadcrumbs(breadcrumbArray);
   }, [location.pathname, actionType]);
 
@@ -84,29 +94,12 @@ const CreateState = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleStateLogoChange = () => {
-    const file = statelogoRef.current?.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-
-    if (!allowedTypes.includes(file.type)) {
-      showTemporaryMessage("Only PNG and JPG images are allowed!", "error");
-      statelogoRef.current.value = "";
-      return;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionType("Save");
 
-    if (
-      !formData.state_name ||
-      !formData.state_code ||
-      !formData.state_country
-    ) {
-      showTemporaryMessage("Please fill in all required fields!", "error");
+    if (!formData.name || !formData.code) {
+      showTemporaryMessage("Please fill all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
       return;
     }
@@ -119,59 +112,34 @@ const CreateState = () => {
       }
     });
 
-    const file = statelogoRef.current?.files?.[0];
-    if (file) {
-      submitData.append("state_logo", file);
-    }
-
     try {
-      const res = await dispatch(createState(submitData)).unwrap();
+      const res = await dispatch(createWarehousetype(submitData)).unwrap();
+
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("State created successfully!", "success");
-      } else if (res.status === 202) {
-        showTemporaryMessage("State create accepted!", "success");
+        showTemporaryMessage("Warehousetype created successfully!", "success");
       } else {
-        showTemporaryMessage("Unexpected response from server.", "error");
+        showTemporaryMessage("Unexpected server response!", "error");
         return;
       }
+
       setFormData({
-        state_name: "",
-        state_code: "",
-        state_logo: null,
-        state_country: "",
+        name: "",
+        code: "",
+        is_raw_material: "",
+        is_finished_goods: "",
+        is_spare_parts: "",
+        is_transit: "",
+        description: "",
+        is_active: "",
+        sort_order: "",
       });
     } catch (error) {
-      console.log("Error:", error);
-
-      let errorMessages = [];
-
-      if (error?.data) {
-        const data = error.data;
-
-        Object.keys(data).forEach((key) => {
-          const value = data[key];
-
-          if (Array.isArray(value)) {
-            value.forEach((msg) => errorMessages.push(msg));
-          } else if (typeof value === "string") {
-            errorMessages.push(value);
-          }
-        });
-      }
-
-      if (errorMessages.length > 0) {
-        errorMessages.forEach((msg, i) => {
-          setTimeout(() => {
-            showTemporaryMessage(msg, "error");
-          }, i * 600);
-        });
-      } else {
-        showTemporaryMessage("Failed to create State!", "error");
-      }
+      showTemporaryMessage("Failed to create Warehousetype!", "error");
     }
 
     setTimeout(() => setActionType(""), 3000);
   };
+
   return (
     <div className="flex h-screen">
       <div className="hidden lg:block fixed top-0 left-0 h-full w-[350px] z-40">
@@ -179,6 +147,7 @@ const CreateState = () => {
       </div>
 
       <main className="flex-1 ml-0 lg:ml-[350px] mt-[150px] p-6 overflow-y-auto bg-white backdrop-blur-sm shadow-inner [&::-webkit-scrollbar]:hidden scrollbar-none">
+        {/* Breadcrumb */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             {breadcrumbs.map((b, index) => (
@@ -193,6 +162,7 @@ const CreateState = () => {
                 ) : (
                   <span>{b.label}</span>
                 )}
+
                 {index < breadcrumbs.length - 1 && (
                   <span className="text-gray-400"> &gt; </span>
                 )}
@@ -200,27 +170,23 @@ const CreateState = () => {
             ))}
           </div>
 
-          {/* Arrows */}
           <div className="flex items-center">
             <button
               onClick={goPrev}
               className={`text-gray-400 text-lg ${
-                currentIndex <= 0
-                  ? "cursor-not-allowed opacity-50"
-                  : "cursor-pointer"
+                currentIndex <= 0 ? "opacity-50" : "cursor-pointer"
               }`}
-              disabled={currentIndex <= 0}
             >
               <MdKeyboardArrowLeft />
             </button>
+
             <button
               onClick={goNext}
               className={`text-gray-400 text-lg ${
                 currentIndex >= breadcrumbs.length - 1
-                  ? "cursor-not-allowed opacity-50"
+                  ? "opacity-50"
                   : "cursor-pointer"
               }`}
-              disabled={currentIndex >= breadcrumbs.length - 1}
             >
               <MdKeyboardArrowRight />
             </button>
@@ -235,9 +201,9 @@ const CreateState = () => {
                   <div className="animate-fadeIn rounded border border-gray-200">
                     <div className="px-6 flex justify-between items-center border-b-2 border-gray-200">
                       <div className="flex items-center gap-2 mt-4 pb-1">
-                        <FiFlag className="text-amber-400 text-lg" />
+                        <FiHome className="text-amber-400 text-lg" />
                         <h2 className="text-lg font-semibold text-gray-700">
-                          Create State
+                          Create Warehouse Type
                         </h2>
                       </div>
 
@@ -252,61 +218,148 @@ const CreateState = () => {
                     <div className="max-h-[255px] rounded overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 px-6 my-4">
                         <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            State Code <span className="text-red-500">*</span>
+                          <label className="w-[200px] text-sm font-medium">
+                            Name <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="state_code"
-                            placeholder="Enter State Code"
-                            value={formData.state_code}
+                            name="name"
+                            value={formData.name}
                             onChange={handleChange}
-                            className="flex-1 w-full form-input"
+                            className="flex-1 form-input"
                           />
                         </div>
+
                         <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            State Name <span className="text-red-500">*</span>
+                          <label className="w-[200px] text-sm font-medium">
+                            Code <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            name="state_name"
-                            placeholder="Enter State name"
-                            value={formData.state_name}
+                            name="code"
+                            value={formData.code}
                             onChange={handleChange}
-                            className="flex-1 w-full form-input"
+                            className="flex-1 form-input"
                           />
                         </div>
+
                         <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            State Logo
-                          </label>
-                          <input
-                            type="file"
-                            ref={statelogoRef}
-                            name="state_logo"
-                            accept="image/png, image/jpeg"
-                            onChange={handleStateLogoChange}
-                            className="flex-1 w-full form-input"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <label className="w-[200px] text-sm font-medium text-gray-700">
-                            Country <span className="text-red-500">*</span>
+                          <label className="w-[200px] text-sm font-medium">
+                            Raw Material
                           </label>
                           <select
-                            name="state_country"
-                            value={formData.state_country}
+                            name="is_raw_material"
+                            value={formData.is_raw_material}
                             onChange={handleChange}
-                            className="flex-1 w-full form-input"
+                            className="flex-1 form-input"
                           >
                             <option value="">Select</option>
-                            {countries.map((country) => (
-                              <option key={country.id} value={country.id}>
-                                {country.country_code} - {country.country_name}
-                              </option>
-                            ))}
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
                           </select>
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Finished Goods
+                          </label>
+                          <select
+                            name="is_finished_goods"
+                            value={formData.is_finished_goods}
+                            onChange={handleChange}
+                            className="flex-1 form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Spare Parts
+                          </label>
+                          <select
+                            name="is_spare_parts"
+                            value={formData.is_spare_parts}
+                            onChange={handleChange}
+                            className="flex-1 form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Transit
+                          </label>
+                          <select
+                            name="is_transit"
+                            value={formData.is_transit}
+                            onChange={handleChange}
+                            className="flex-1 form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Sort Order
+                          </label>
+                          <input
+                            type="number"
+                            name="sort_order"
+                            value={formData.sort_order}
+                            onKeyDown={(e) => {
+                              if (["-", "+", "e", "E", "."].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              const regex = /^\d*$/;
+                              if (value === "" || regex.test(value)) {
+                                handleChange(e);
+                              }
+                            }}
+                            min="0"
+                            inputMode="numeric"
+                            className="flex-1 w-full form-input"
+                          />
+                        </div>
+
+                        <div className="flex items-center">
+                          <label className="w-[200px] text-sm font-medium">
+                            Active
+                          </label>
+                          <select
+                            name="is_active"
+                            value={formData.is_active}
+                            onChange={handleChange}
+                            className="flex-1 form-input"
+                          >
+                            <option value="">Select</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-start col-span-2">
+                          <label className="w-[200px] text-sm font-medium">
+                            Description
+                          </label>
+                          <textarea
+                            name="description"
+                            rows={2}
+                            value={formData.description}
+                            onChange={handleChange}
+                            className="flex-1 textarea-input"
+                          />
                         </div>
                       </div>
                     </div>
@@ -340,4 +393,4 @@ const CreateState = () => {
   );
 };
 
-export default CreateState;
+export default CreateWarehousetype;

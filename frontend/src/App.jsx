@@ -31,6 +31,30 @@ import CreateCountry from "./pages/admin/basicsettings/CreateCountry";
 import ViewCountry from "./pages/admin/basicsettings/ViewCountry";
 import CreateState from "./pages/admin/basicsettings/CreateState";
 import ViewState from "./pages/admin/basicsettings/ViewState";
+import CreateLanguage from "./pages/admin/basicsettings/CreateLanguage";
+import ViewLanguage from "./pages/admin/basicsettings/ViewLanguage";
+import CreateCompanystatus from "./pages/admin/basicsettings/CreateCompanystatus";
+import ViewCompanyStatus from "./pages/admin/basicsettings/ViewCompanystatus";
+import CreateUserStatus from "./pages/admin/basicsettings/CreateUserStatus";
+import ViewUserStatus from "./pages/admin/basicsettings/ViewUserStatus";
+import CreateCity from "./pages/admin/basicsettings/CreateCity";
+import ViewCity from "./pages/admin/basicsettings/ViewCity";
+import CreateUsertype from "./pages/admin/basicsettings/CreateUsertype";
+import ViewUsertype from "./pages/admin/basicsettings/ViewUsertype";
+import CreatePosition from "./pages/admin/basicsettings/CreatePosition";
+import ViewPosition from "./pages/admin/basicsettings/ViewPosition";
+import CreateBusinessarea from "./pages/admin/basicsettings/CreateBusinessarea";
+import ViewBusinessarea from "./pages/admin/basicsettings/ViewBusinessarea";
+import CreateBusinesssector from "./pages/admin/basicsettings/CreateBusinesssector";
+import ViewBusinesssector from "./pages/admin/basicsettings/ViewBusinesssector";
+import CreateWarehousetype from "./pages/admin/warehouse/CreateWarehousetype";
+import ViewWarehousetypes from "./pages/admin/warehouse/ViewWarehousetypes";
+import WarehouseMaster from "./pages/admin/warehouse/WarehouseMaster";
+import CreateStoragelocationtype from "./pages/admin/warehouse/CreateStoragelocationtype";
+import ViewStoragelocationtype from "./pages/admin/warehouse/ViewStoragelocationtype";
+import CreateMaterialmovement from "./pages/admin/warehouse/CreateMaterialmovement";
+import ViewMaterialmovements from "./pages/admin/warehouse/ViewMaterialmovement";
+import CreateTransactionstatus from "./pages/admin/warehouse/CreateTransactionstatus";
 
 function App() {
   return (
@@ -47,6 +71,43 @@ function App() {
         <Route path="/admin/country/view" element={<ViewCountry />} />
         <Route path="/admin/state/create" element={<CreateState />} />
         <Route path="/admin/state/view" element={<ViewState />} />
+        <Route path="/admin/language/create" element={<CreateLanguage />} />
+        <Route path="/admin/language/view" element={<ViewLanguage />} />
+        <Route
+          path="/admin/company_status/create"
+          element={<CreateCompanystatus />}
+        />
+        <Route
+          path="/admin/company_status/view"
+          element={<ViewCompanyStatus />}
+        />
+        <Route
+          path="/admin/user_status/create"
+          element={<CreateUserStatus />}
+        />
+        <Route path="/admin/user_status/view" element={<ViewUserStatus />} />
+        <Route path="/admin/city/create" element={<CreateCity />} />
+        <Route path="/admin/city/view" element={<ViewCity />} />
+        <Route path="/admin/user_type/create" element={<CreateUsertype />} />
+        <Route path="/admin/user_type/view" element={<ViewUsertype />} />
+        <Route path="/admin/position/create" element={<CreatePosition />} />
+        <Route path="/admin/position/view" element={<ViewPosition />} />
+        <Route
+          path="/admin/business_area/create"
+          element={<CreateBusinessarea />}
+        />
+        <Route
+          path="/admin/business_area/view"
+          element={<ViewBusinessarea />}
+        />
+        <Route
+          path="/admin/business_sector/create"
+          element={<CreateBusinesssector />}
+        />
+        <Route
+          path="/admin/business_sector/view"
+          element={<ViewBusinesssector />}
+        />
 
         {/* Enterprise Structure */}
         <Route path="/admin/users/create" element={<CreateUser />} />
@@ -106,7 +167,38 @@ function App() {
         />
         <Route path="/admin/material-types" element={<MaterialTypes />} />
         <Route path="/admin/materials" element={<MaterialMaster />} />
+
+        {/*Warehouse */}
+        <Route
+          path="/admin/warehouse_type/create"
+          element={<CreateWarehousetype />}
+        />
+        <Route
+          path="/admin/warehouse_type/view"
+          element={<ViewWarehousetypes />}
+        />
+        <Route path="/admin/warehouse-master" element={<WarehouseMaster />} />
+        <Route
+          path="/admin/storage_location_type/create"
+          element={<CreateStoragelocationtype />}
+        />
+        <Route
+          path="/admin/storage_location_type/view"
+          element={<ViewStoragelocationtype />}
+        />
+        <Route
+          path="/admin/material_movement/create"
+          element={<CreateMaterialmovement />}
+        />
+        <Route
+          path="/admin/material_movement/view"
+          element={<ViewMaterialmovements />}
+        />
       </Route>
+      <Route
+        path="/admin/transaction_status/create"
+        element={<CreateTransactionstatus />}
+      />
     </Routes>
   );
 }

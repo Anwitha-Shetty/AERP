@@ -2,26 +2,26 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
 /* ================= COMPANIES CRUD ================= */
-export const fetchCountries = createAsyncThunk(
-  "countries/fetchCountries",
+export const fetchCities = createAsyncThunk(
+  "cities/fetchCities",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/people/country/");
+      const res = await api.get("/people/city/");
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Error fetching Countries");
+      return rejectWithValue(err.response?.data || "Error fetching Cities");
     }
   },
 );
 
-export const createCountry = createAsyncThunk(
-  "countries/createCountry",
+export const createCity = createAsyncThunk(
+  "cities/createCity",
   async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.post("/people/country/", formData, {
+      const res = await api.post("/people/city/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchCities());
       return {
         data: res.data,
         status: res.status,
@@ -35,14 +35,14 @@ export const createCountry = createAsyncThunk(
   },
 );
 
-export const updateCountry = createAsyncThunk(
-  "countries/updateCountry",
+export const updateCity = createAsyncThunk(
+  "cities/updateCity",
   async ({ id, formData }, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.put(`/people/country/${id}`, formData, {
+      const res = await api.put(`/people/city/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      dispatch(fetchCountries());
+      dispatch(fetchCities());
       return {
         id,
         data: res.data,
@@ -57,12 +57,12 @@ export const updateCountry = createAsyncThunk(
   },
 );
 
-export const deleteCountry = createAsyncThunk(
-  "countries/deleteCountry",
+export const deleteCity = createAsyncThunk(
+  "cities/deleteCity",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const res = await api.delete(`/people/country/${id}`);
-      dispatch(fetchCountries());
+      const res = await api.delete(`/people/city/${id}`);
+      dispatch(fetchCities());
       return {
         id,
         status: res.status,
@@ -72,33 +72,50 @@ export const deleteCountry = createAsyncThunk(
         data: err.response?.data,
         status: err.response?.status,
       });
+    }
+  },
+);
+
+/* ================= FK DROPDOWNS ================= */
+export const fetchStates = createAsyncThunk(
+  "cities/fetchStates",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/people/state/");
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data);
     }
   },
 );
 
 /* ================= SLICE ================= */
-const countrySlice = createSlice({
-  name: "countries",
+const citySlice = createSlice({
+  name: "cities",
   initialState: {
-    countries: [],
+    cities: [],
+    states: [],
     loading: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCountries.pending, (state) => {
+      .addCase(fetchCities.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCountries.fulfilled, (state, action) => {
+      .addCase(fetchCities.fulfilled, (state, action) => {
         state.loading = false;
-        state.countries = action.payload;
+        state.cities = action.payload;
       })
-      .addCase(fetchCountries.rejected, (state, action) => {
+      .addCase(fetchCities.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(fetchStates.fulfilled, (state, action) => {
+        state.states = action.payload;
       });
   },
 });
 
-export default countrySlice.reducer;
+export default citySlice.reducer;

@@ -2,11 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/AdminSidebar";
 import mainConfig from "../../../config/mainConfig";
 import { useEffect, useState } from "react";
-import {
-  MdCurrencyExchange,
-  MdKeyboardArrowLeft,
-  MdKeyboardArrowRight,
-} from "react-icons/md";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import {
   FiAlertTriangle,
   FiArrowLeft,
@@ -16,19 +12,23 @@ import {
   FiInfo,
   FiPlus,
   FiSearch,
+  FiUser,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchCurriences,
-  updateCurrency,
-  deleteCurrency,
-} from "../../../store/slices/currencySlice";
-import { FaTimes, FaTrashAlt } from "react-icons/fa";
+  deleteBusinesssector,
+  fetchBusinesssectors,
+  updateBusinesssector,
+} from "../../../store/slices/businesssectorSlice";
+import { FaTimes, FaTrashAlt, FaUserTie } from "react-icons/fa";
 import dayjs from "dayjs";
+import { GiFactory } from "react-icons/gi";
 
-const ViewCurrency = () => {
+const ViewBusinesssector = () => {
   const dispatch = useDispatch();
-  const { currencies, loading } = useSelector((state) => state.currencies);
+  const { businesssectors, loading } = useSelector(
+    (state) => state.businesssectors,
+  );
 
   // ---------------- FILTER / SORT / PAGINATION ----------------
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,11 +36,11 @@ const ViewCurrency = () => {
   const rowsPerPage = 5;
 
   useEffect(() => {
-    dispatch(fetchCurriences());
+    dispatch(fetchBusinesssectors());
   }, [dispatch]);
 
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+  const [selectedBusinesssectors, setSelectedBusinesssectors] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,15 +56,15 @@ const ViewCurrency = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [selectedBusinesssector, setSelectedBusinesssector] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
-    currency_name: "",
-    currency_code: "",
-    currency_symbol: "",
+    business_sector: "",
+    business_sector_code: "",
+    business_sector_description: "",
   });
 
   const findPathInMenu = (menu, targetPath, parents = []) => {
@@ -102,10 +102,10 @@ const ViewCurrency = () => {
     if (action === "Delete") {
       baseBreadcrumbs.push({ label: "Delete", path: null });
 
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedBusinesssectors.length > 0) {
         baseBreadcrumbs.push({
-          label: formatIdsWithEllipsis(selectedCurrencies),
-          fullLabel: selectedCurrencies.join(", "),
+          label: formatIdsWithEllipsis(selectedBusinesssectors),
+          fullLabel: selectedBusinesssectors.join(", "),
           path: null,
         });
       } else if (deleteId) {
@@ -143,8 +143,8 @@ const ViewCurrency = () => {
       updateBreadcrumbs("Delete");
     } else if (showEditModal && editId) {
       updateBreadcrumbs("Change", editId);
-    } else if (showConfirm && selectedCurrency?.id) {
-      updateBreadcrumbs("View", selectedCurrency.id);
+    } else if (showConfirm && selectedBusinesssector?.id) {
+      updateBreadcrumbs("View", selectedBusinesssector.id);
     } else {
       updateBreadcrumbs();
     }
@@ -153,9 +153,9 @@ const ViewCurrency = () => {
     showDeleteModal,
     showEditModal,
     showConfirm,
-    selectedCurrencies,
+    selectedBusinesssectors,
     editId,
-    selectedCurrency,
+    selectedBusinesssector,
   ]);
 
   const currentIndex = breadcrumbs.findIndex(
@@ -176,12 +176,13 @@ const ViewCurrency = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleOpenEdit = (currency) => {
-    setEditId(currency.id);
+  const handleOpenEdit = (businesssector) => {
+    setEditId(businesssector.id);
     setFormData({
-      currency_name: currency.currency_name || "",
-      currency_code: currency.currency_code || "",
-      currency_symbol: currency.currency_symbol || "",
+      business_sector: businesssector.business_sector || "",
+      business_sector_code: businesssector.business_sector_code || "",
+      business_sector_description:
+        businesssector.business_sector_description || "",
     });
 
     setShowEditModal(true);
@@ -199,9 +200,9 @@ const ViewCurrency = () => {
     });
 
     if (
-      !formData.currency_name ||
-      !formData.currency_code ||
-      !formData.currency_symbol
+      !formData.business_sector ||
+      !formData.business_sector_code ||
+      !formData.business_sector_description
     ) {
       showTemporaryMessage("Please fill in all required fields!", "error");
       setTimeout(() => setActionType(""), 3000);
@@ -210,13 +211,16 @@ const ViewCurrency = () => {
 
     try {
       const res = await dispatch(
-        updateCurrency({ id: editId, formData: data }),
+        updateBusinesssector({ id: editId, formData: data }),
       ).unwrap();
 
       if (res.status === 200 || res.status === 201) {
-        showTemporaryMessage("Currency updated successfully!", "success");
+        showTemporaryMessage(
+          "Business Sectors updated successfully!",
+          "success",
+        );
       } else if (res.status === 202) {
-        showTemporaryMessage("Currency update accepted!", "success");
+        showTemporaryMessage("Business Sectors update accepted!", "success");
       } else {
         showTemporaryMessage("Unexpected response from server.", "error");
         return;
@@ -250,7 +254,7 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to update Currency!", "error");
+        showTemporaryMessage("Failed to update Business Sectors!", "error");
       }
     }
   };
@@ -260,9 +264,9 @@ const ViewCurrency = () => {
     setEditId(null);
 
     setFormData({
-      currency_name: "",
-      currency_code: "",
-      currency_symbol: "",
+      business_sector: "",
+      business_sector_code: "",
+      business_sector_description: "",
     });
   };
 
@@ -274,32 +278,40 @@ const ViewCurrency = () => {
   };
 
   const handleBulkDeleteClick = () => {
-    if (selectedCurrencies.length === 0) return;
+    if (selectedBusinesssectors.length === 0) return;
     setIsBulkDelete(true);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      if (isBulkDelete && selectedCurrencies.length > 0) {
+      if (isBulkDelete && selectedBusinesssectors.length > 0) {
         const res = await Promise.all(
-          selectedCurrencies.map((id) => dispatch(deleteCurrency(id)).unwrap()),
+          selectedBusinesssectors.map((id) =>
+            dispatch(deleteBusinesssector(id)).unwrap(),
+          ),
         );
         if (res.every((r) => r.status === 200 || r.status === 201)) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage(
+            "Business Sectors deleted successfully!",
+            "success",
+          );
         } else if (res.every((r) => r.status === 202)) {
-          showTemporaryMessage("Currency delete accepted!", "success");
+          showTemporaryMessage("Business Sectors delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
         }
-        setSelectedCurrencies([]);
+        setSelectedBusinesssectors([]);
       } else if (deleteId) {
-        const res = await dispatch(deleteCurrency(deleteId)).unwrap();
+        const res = await dispatch(deleteBusinesssector(deleteId)).unwrap();
         if (res.status === 200 || res.status === 201) {
-          showTemporaryMessage("Currency deleted successfully!", "success");
+          showTemporaryMessage(
+            "Business Sectors deleted successfully!",
+            "success",
+          );
         } else if (res.status === 202) {
-          showTemporaryMessage("Curenncy delete accepted!", "success");
+          showTemporaryMessage("Business Sectors delete accepted!", "success");
         } else {
           showTemporaryMessage("Unexpected response from server.", "error");
           return;
@@ -335,30 +347,28 @@ const ViewCurrency = () => {
           }, i * 600);
         });
       } else {
-        showTemporaryMessage("Failed to delete Currency!", "error");
+        showTemporaryMessage("Failed to delete Business Sectors!", "error");
       }
     }
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredCurrencies = currencies.filter((currency) => {
+  const filteredBusinesssectors = businesssectors.filter((businesssector) => {
     const search = searchTerm.toLowerCase().trim().replace(/\s+/g, " ");
     const normalize = (value) =>
       (value || "").toString().toLowerCase().trim().replace(/\s+/g, " ");
 
     return (
-      normalize(currency?.currency_code).includes(search) ||
-      normalize(currency?.currency_name).includes(search) ||
-      normalize(currency?.currency_symbol).includes(search) ||
-      normalize(currency?.creator?.username).includes(search) ||
-      normalize(currency?.company?.company_name).includes(search)
+      normalize(businesssector?.business_sector).includes(search) ||
+      normalize(businesssector?.business_sector_code).includes(search) ||
+      normalize(businesssector?.business_sector_description).includes(search)
     );
   });
 
   // ---------------- PAGINATION LOGIC ----------------
-  const totalPages = Math.ceil(filteredCurrencies.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredBusinesssectors.length / rowsPerPage);
 
-  const paginatedCurriences = filteredCurrencies.slice(
+  const paginatedBusinesssectors = filteredBusinesssectors.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -429,9 +439,9 @@ const ViewCurrency = () => {
         <div className="w-full mb-4">
           <div className="flex justify-between items-end border-b-2 border-gray-300 pb-1 mb-4">
             <div className="flex items-center gap-2">
-              <MdCurrencyExchange className="text-amber-400 text-lg" />
+              <GiFactory className="text-amber-400 text-lg" />
               <h2 className="text-lg font-semibold text-gray-700">
-                View Currency
+                View Business Sectors
               </h2>
             </div>
 
@@ -449,20 +459,20 @@ const ViewCurrency = () => {
               </div>
 
               <Link
-                to="/admin/currency/create"
+                to="/admin/user_type/create"
                 className="px-3 py-1.5 cursor-pointer bg-amber-400 rounded h-8 text-black flex items-center gap-1 justify-center transition"
               >
-                <FiPlus /> Create Currency
+                <FiPlus /> Create Business Sectors
               </Link>
 
-              {selectedCurrencies.length > 1 && (
+              {selectedBusinesssectors.length > 1 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="relative inline-flex items-center justify-center gap-2 text-red-500 text-sm font-medium px-3 h-9 transition cursor-pointer"
                 >
                   <FaTrashAlt size={16} />
                   <span className="absolute -top-1 -right-1 text-red-600 text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full border border-red-500 bg-white">
-                    {selectedCurrencies.length}
+                    {selectedBusinesssectors.length}
                   </span>
                 </button>
               )}
@@ -477,21 +487,21 @@ const ViewCurrency = () => {
                 <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                   <tr>
                     <th className="px-2 py-2 border border-gray-200 text-center sticky top-0 z-20">
-                      {filteredCurrencies.length <= 1 ? (
+                      {filteredBusinesssectors.length <= 1 ? (
                         "-"
                       ) : (
                         <input
                           type="checkbox"
                           checked={
-                            filteredCurrencies.length > 1 &&
-                            selectedCurrencies.length ===
-                              filteredCurrencies.length
+                            filteredBusinesssectors.length > 1 &&
+                            selectedBusinesssectors.length ===
+                              filteredBusinesssectors.length
                           }
                           onChange={(e) =>
-                            setSelectedCurrencies(
+                            setSelectedBusinesssectors(
                               e.target.checked
-                                ? filteredCurrencies.map(
-                                    (currency) => currency.id,
+                                ? filteredBusinesssectors.map(
+                                    (businesssector) => businesssector.id,
                                   )
                                 : [],
                             )
@@ -501,11 +511,9 @@ const ViewCurrency = () => {
                       )}
                     </th>
                     {[
-                      "CURRENCY CODE",
-                      "CURRENCY NAME",
-                      "CURRENCY SYMBOL",
-                      "CREATOR",
-                      "COMPANY",
+                      " BUSINESS SECTOR ",
+                      "BUSINESS SECTOR CODE",
+                      "DESCRIPTION",
                       "ACTIONS",
                     ].map((label, idx) => (
                       <th
@@ -530,46 +538,42 @@ const ViewCurrency = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredCurrencies.length > 0 ? (
-                    paginatedCurriences.map((currency) => (
+                  ) : filteredBusinesssectors.length > 0 ? (
+                    paginatedBusinesssectors.map((businesssector) => (
                       <tr
-                        key={currency.id}
+                        key={businesssector.id}
                         className="hover:bg-gray-50 text-center transition-all duration-200"
                       >
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={selectedCurrencies.includes(currency.id)}
+                            checked={selectedBusinesssectors.includes(
+                              businesssector.id,
+                            )}
                             onChange={() =>
-                              setSelectedCurrencies((prev) =>
-                                prev.includes(currency.id)
-                                  ? prev.filter((x) => x !== currency.id)
-                                  : [...prev, currency.id],
+                              setSelectedBusinesssectors((prev) =>
+                                prev.includes(businesssector.id)
+                                  ? prev.filter((x) => x !== businesssector.id)
+                                  : [...prev, businesssector.id],
                               )
                             }
                             className="w-4 h-4 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 accent-amber-400"
                           />
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_code || "--"}
+                          {businesssector?.business_sector || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_name || "--"}
+                          {businesssector?.business_sector_code || "--"}
                         </td>
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.currency_symbol || "--"}
-                        </td>
-                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.creator?.username || "--"}
-                        </td>
-                        <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
-                          {currency?.company?.company_name || "--"}
+                          {businesssector?.business_sector_description || "--"}
                         </td>
 
                         <td className="px-2 py-2 border border-gray-200 whitespace-nowrap">
                           <div className="flex justify-center items-center space-x-3 text-sm">
                             <button
-                              onClick={() => handleOpenEdit(currency)}
+                              onClick={() => handleOpenEdit(businesssector)}
                               className="text-amber-400 hover:scale-110 cursor-pointer transition"
                               title="Edit"
                             >
@@ -577,8 +581,8 @@ const ViewCurrency = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setSelectedCurrency(currency);
-                                updateBreadcrumbs("View", currency.id);
+                                setSelectedBusinesssector(businesssector);
+                                updateBreadcrumbs("View", businesssector.id);
                                 setShowConfirm(true);
                               }}
                               className="text-gray-600 hover:scale-110 cursor-pointer transition"
@@ -587,7 +591,7 @@ const ViewCurrency = () => {
                               <FiEye size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(currency.id)}
+                              onClick={() => handleDelete(businesssector.id)}
                               className="text-red-500 hover:scale-110 cursor-pointer transition"
                               title="Delete"
                             >
@@ -603,7 +607,7 @@ const ViewCurrency = () => {
                         colSpan={7}
                         className="px-2 py-2 text-center text-gray-400 border border-gray-200"
                       >
-                        No Currency found!
+                        No Business Sectors found!
                       </td>
                     </tr>
                   )}
@@ -676,14 +680,14 @@ const ViewCurrency = () => {
         )}
       </main>
 
-      {showConfirm && selectedCurrency && (
+      {showConfirm && selectedBusinesssector && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex justify-center items-center z-50">
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-xl border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <GiFactory className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  View Currency
+                  View Business Sectors
                 </h2>
               </div>
 
@@ -701,26 +705,27 @@ const ViewCurrency = () => {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Code:
+                      Business Sectors:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_code || "--"}
+                      {selectedBusinesssector?.business_sector || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Name:
+                      Business Sectors Code:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_name || "--"}
+                      {selectedBusinesssector?.business_sector_code || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
-                    <td className="font-semibold w-2/5 py-1 text-left">
-                      Currency Symbol:
+                    <td className="font-semibold w-2/5 py-1 text-left align-top">
+                      Description:
                     </td>
-                    <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.currency_symbol || "--"}
+                    <td className="w-3/5 py-1 text-left pl-4 align-top">
+                      {selectedBusinesssector?.business_sector_description ||
+                        "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -728,7 +733,7 @@ const ViewCurrency = () => {
                       Creator:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.creator?.username || "--"}
+                      {selectedBusinesssector?.creator?.username || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -736,7 +741,7 @@ const ViewCurrency = () => {
                       Company:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.company?.company_name || "--"}
+                      {selectedBusinesssector?.company?.company_name || "--"}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
@@ -744,8 +749,8 @@ const ViewCurrency = () => {
                       Created At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.created_at
-                        ? dayjs(selectedCurrency?.created_at).format(
+                      {selectedBusinesssector?.created_at
+                        ? dayjs(selectedBusinesssector?.created_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -756,8 +761,8 @@ const ViewCurrency = () => {
                       Updated At:
                     </td>
                     <td className="w-3/5 py-1 text-left pl-4">
-                      {selectedCurrency?.updated_at
-                        ? dayjs(selectedCurrency?.updated_at).format(
+                      {selectedBusinesssector?.updated_at
+                        ? dayjs(selectedBusinesssector?.updated_at).format(
                             "DD-MM-YYYY hh:mm A",
                           )
                         : "--"}
@@ -775,9 +780,9 @@ const ViewCurrency = () => {
           <div className="bg-white pt-0 pb-6 pl-6 pr-6 rounded-md w-11/12 max-w-md border border-gray-300">
             <div className="flex justify-between items-center border-b-2 pb-2 mt-4 mb-4 border-gray-300">
               <div className="flex items-center gap-2">
-                <MdCurrencyExchange className="text-amber-400 text-lg" />
+                <GiFactory className="text-amber-400 text-lg" />
                 <h2 className="text-lg font-semibold text-gray-700">
-                  Change Currency
+                  Change Business Sectors
                 </h2>
               </div>
               <button
@@ -791,42 +796,42 @@ const ViewCurrency = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700 max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden scrollbar-none">
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Code <span className="text-red-500">*</span>
+                  Business Sectors <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_code"
-                  placeholder="Enter Currency Code"
-                  value={formData.currency_code}
+                  name="business_sector"
+                  placeholder="Enter Business Sectors"
+                  value={formData.business_sector}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
               <div className="flex flex-col">
                 <label className="form-label">
-                  Currency Name <span className="text-red-500">*</span>
+                  Business Sectors Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  name="currency_name"
-                  placeholder="Enter Currency Name"
-                  value={formData.currency_name}
+                  name="business_sector_code"
+                  placeholder="Enter Business Sectors Code "
+                  value={formData.business_sector_code}
                   onChange={handleChange}
                   className="form-input"
                 />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col col-span-2">
                 <label className="form-label">
-                  Currency Symbol <span className="text-red-500">*</span>
+                  Description <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="currency_symbol"
-                  placeholder="Enter Currency Symbol"
-                  value={formData.currency_symbol}
+                <textarea
+                  name="business_sector_description"
+                  value={formData.business_sector_description}
                   onChange={handleChange}
-                  className="form-input"
-                />
+                  rows={2}
+                  className="flex-1 w-full textarea-input"
+                  placeholder="Enter description..."
+                ></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-4">
@@ -867,7 +872,7 @@ const ViewCurrency = () => {
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  if (isBulkDelete) setSelectedCurrencies([]);
+                  if (isBulkDelete) setSelectedPostions([]);
                   setIsBulkDelete(false);
                   setDeleteId(null);
                 }}
@@ -883,4 +888,4 @@ const ViewCurrency = () => {
   );
 };
 
-export default ViewCurrency;
+export default ViewBusinesssector;
